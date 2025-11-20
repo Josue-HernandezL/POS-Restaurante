@@ -10,6 +10,7 @@ API REST para sistema de punto de venta de restaurante usando Express y Firebase
   - [Categorías](#categorías)
   - [Ítems del Menú](#ítems-del-menú)
 - [Endpoints de Reservaciones](#endpoints-de-reservaciones)
+- [Endpoints de Configuración](#endpoints-de-configuración)
 - [Roles Disponibles](#roles-disponibles)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 
@@ -1187,6 +1188,406 @@ pendiente → confirmada → sentada → terminada
 - El sistema valida automáticamente conflictos de mesa (ventana de 2 horas)
 - Los números de teléfono deben tener mínimo 10 dígitos
 - El número de personas permitido es de 1 a 20
+
+---
+
+## Endpoints de Configuración
+
+### ⚙️ Obtener Configuración
+
+**Endpoint:** `GET /api/configuracion`
+
+**Descripción:** Obtiene la configuración actual del restaurante. Si no existe, se crea automáticamente con valores por defecto.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "restaurante": {
+      "nombre": "Mi Restaurante",
+      "direccion": "Calle Principal 123",
+      "telefono": "5551234567",
+      "numeroMesas": 20
+    },
+    "notificaciones": {
+      "nuevasOrdenes": true,
+      "nuevasReservaciones": true
+    },
+    "impuestos": {
+      "porcentajeIVA": 16,
+      "aplicarATodos": true
+    },
+    "propinas": {
+      "opcion1": 10,
+      "opcion2": 15,
+      "opcion3": 20,
+      "permitirPersonalizada": true
+    },
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z"
+  }
+}
+```
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/configuracion \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🏪 Actualizar Información del Restaurante
+
+**Endpoint:** `PUT /api/configuracion/restaurante`
+
+**Descripción:** Actualiza la información básica del restaurante.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "nombre": "Mi Restaurante",
+  "direccion": "Calle Principal 123",
+  "telefono": "5551234567",
+  "numeroMesas": 20
+}
+```
+
+**Campos:**
+- `nombre` (string, opcional): Nombre del restaurante (3-100 caracteres)
+- `direccion` (string, opcional): Dirección del restaurante (10-200 caracteres)
+- `telefono` (string, opcional): Teléfono de contacto (mínimo 10 dígitos)
+- `numeroMesas` (number, opcional): Número total de mesas (0-500)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Información del restaurante actualizada exitosamente",
+  "datos": {
+    "restaurante": {
+      "nombre": "Mi Restaurante",
+      "direccion": "Calle Principal 123",
+      "telefono": "5551234567",
+      "numeroMesas": 20
+    },
+    "notificaciones": {
+      "nuevasOrdenes": true,
+      "nuevasReservaciones": true
+    },
+    "impuestos": {
+      "porcentajeIVA": 16,
+      "aplicarATodos": true
+    },
+    "propinas": {
+      "opcion1": 10,
+      "opcion2": 15,
+      "opcion3": 20,
+      "permitirPersonalizada": true
+    },
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T15:45:00.000Z"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Campos inválidos o fuera de rango
+- `403`: Sin permisos (no es admin ni gerente)
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/configuracion/restaurante \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nombre": "Mi Restaurante",
+    "direccion": "Calle Principal 123",
+    "telefono": "5551234567",
+    "numeroMesas": 20
+  }'
+```
+
+---
+
+### 🔔 Actualizar Configuración de Notificaciones
+
+**Endpoint:** `PUT /api/configuracion/notificaciones`
+
+**Descripción:** Activa o desactiva las notificaciones del sistema.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "nuevasOrdenes": true,
+  "nuevasReservaciones": false
+}
+```
+
+**Campos:**
+- `nuevasOrdenes` (boolean, opcional): Recibir notificaciones de nuevas órdenes
+- `nuevasReservaciones` (boolean, opcional): Recibir notificaciones de nuevas reservaciones
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Configuración de notificaciones actualizada exitosamente",
+  "datos": {
+    "restaurante": {
+      "nombre": "Mi Restaurante",
+      "direccion": "Calle Principal 123",
+      "telefono": "5551234567",
+      "numeroMesas": 20
+    },
+    "notificaciones": {
+      "nuevasOrdenes": true,
+      "nuevasReservaciones": false
+    },
+    "impuestos": {
+      "porcentajeIVA": 16,
+      "aplicarATodos": true
+    },
+    "propinas": {
+      "opcion1": 10,
+      "opcion2": 15,
+      "opcion3": 20,
+      "permitirPersonalizada": true
+    },
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T16:00:00.000Z"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Valores inválidos (deben ser booleanos)
+- `403`: Sin permisos
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/configuracion/notificaciones \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nuevasOrdenes": true,
+    "nuevasReservaciones": false
+  }'
+```
+
+---
+
+### 💰 Actualizar Configuración de Impuestos
+
+**Endpoint:** `PUT /api/configuracion/impuestos`
+
+**Descripción:** Configura el porcentaje de IVA que se aplicará a las órdenes.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "porcentajeIVA": 16,
+  "aplicarATodos": true
+}
+```
+
+**Campos:**
+- `porcentajeIVA` (number, opcional): Porcentaje de IVA (0-100)
+- `aplicarATodos` (boolean, opcional): Si se aplica el IVA a todas las órdenes
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Configuración de impuestos actualizada exitosamente",
+  "datos": {
+    "restaurante": {
+      "nombre": "Mi Restaurante",
+      "direccion": "Calle Principal 123",
+      "telefono": "5551234567",
+      "numeroMesas": 20
+    },
+    "notificaciones": {
+      "nuevasOrdenes": true,
+      "nuevasReservaciones": true
+    },
+    "impuestos": {
+      "porcentajeIVA": 16,
+      "aplicarATodos": true
+    },
+    "propinas": {
+      "opcion1": 10,
+      "opcion2": 15,
+      "opcion3": 20,
+      "permitirPersonalizada": true
+    },
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T16:15:00.000Z"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Porcentaje fuera de rango (0-100) o valores inválidos
+- `403`: Sin permisos
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/configuracion/impuestos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "porcentajeIVA": 16,
+    "aplicarATodos": true
+  }'
+```
+
+---
+
+### 💵 Actualizar Opciones de Propina
+
+**Endpoint:** `PUT /api/configuracion/propinas`
+
+**Descripción:** Configura las opciones de propina sugeridas que se mostrarán al cliente.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "opcion1": 10,
+  "opcion2": 15,
+  "opcion3": 20,
+  "permitirPersonalizada": true
+}
+```
+
+**Campos:**
+- `opcion1` (number, opcional): Primera opción de propina en porcentaje (0-100)
+- `opcion2` (number, opcional): Segunda opción de propina en porcentaje (0-100)
+- `opcion3` (number, opcional): Tercera opción de propina en porcentaje (0-100)
+- `permitirPersonalizada` (boolean, opcional): Permitir que el cliente ingrese una propina personalizada
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Opciones de propina actualizadas exitosamente",
+  "datos": {
+    "restaurante": {
+      "nombre": "Mi Restaurante",
+      "direccion": "Calle Principal 123",
+      "telefono": "5551234567",
+      "numeroMesas": 20
+    },
+    "notificaciones": {
+      "nuevasOrdenes": true,
+      "nuevasReservaciones": true
+    },
+    "impuestos": {
+      "porcentajeIVA": 16,
+      "aplicarATodos": true
+    },
+    "propinas": {
+      "opcion1": 10,
+      "opcion2": 15,
+      "opcion3": 20,
+      "permitirPersonalizada": true
+    },
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T16:30:00.000Z"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Porcentajes fuera de rango (0-100) o valores inválidos
+- `403`: Sin permisos
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/configuracion/propinas \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "opcion1": 10,
+    "opcion2": 15,
+    "opcion3": 20,
+    "permitirPersonalizada": true
+  }'
+```
+
+---
+
+### 📊 Estructura de Configuración
+
+La configuración del sistema se organiza en cuatro secciones principales:
+
+**1. Información del Restaurante:**
+- Datos básicos del establecimiento
+- Nombre, dirección, teléfono y número de mesas
+
+**2. Notificaciones:**
+- Control de alertas del sistema
+- Nuevas órdenes y nuevas reservaciones
+
+**3. Impuestos:**
+- Configuración de IVA
+- Porcentaje aplicable y opciones de aplicación
+
+**4. Propinas:**
+- Opciones sugeridas para clientes
+- Tres porcentajes predefinidos
+- Opción para permitir propinas personalizadas
+
+**Reglas importantes:**
+- Solo usuarios con rol `admin` o `gerente` pueden modificar la configuración
+- Todos los endpoints permiten actualizaciones parciales (solo enviar campos a modificar)
+- Si no existe configuración al consultar, se crea automáticamente con valores por defecto
+- Los cambios se reflejan inmediatamente en todo el sistema
+- Solo existe un documento de configuración para todo el restaurante
 
 ---
 

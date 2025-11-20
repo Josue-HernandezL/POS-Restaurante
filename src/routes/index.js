@@ -4,6 +4,7 @@ const authRoutes = require('./authRoutes');
 const categoriaRoutes = require('./categoriaRoutes');
 const itemMenuRoutes = require('./itemMenuRoutes');
 const reservacionRoutes = require('./reservacionRoutes');
+const configuracionRoutes = require('./configuracionRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -16,6 +17,9 @@ router.use('/items', itemMenuRoutes);
 
 // Rutas de reservaciones
 router.use('/reservaciones', reservacionRoutes);
+
+// Rutas de configuración
+router.use('/configuracion', configuracionRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -50,6 +54,13 @@ router.get('/', (req, res) => {
         sentar: 'PATCH /api/reservaciones/:id/sentar (requiere token)',
         terminar: 'PATCH /api/reservaciones/:id/terminar (requiere token)',
         cancelar: 'PATCH /api/reservaciones/:id/cancelar (requiere token)',
+      },
+      configuracion: {
+        obtener: 'GET /api/configuracion (requiere token)',
+        actualizarRestaurante: 'PUT /api/configuracion/restaurante (requiere token - admin/gerente)',
+        actualizarNotificaciones: 'PUT /api/configuracion/notificaciones (requiere token - admin/gerente)',
+        actualizarImpuestos: 'PUT /api/configuracion/impuestos (requiere token - admin/gerente)',
+        actualizarPropinas: 'PUT /api/configuracion/propinas (requiere token - admin/gerente)',
       },
     },
   });

@@ -63,6 +63,7 @@ app.listen(PORT, () => {
 ║   • GET  /api/items                            ║
 ║   • POST /api/reservaciones                    ║
 ║   • GET  /api/reservaciones                    ║
+║   • GET  /api/configuracion                    ║
 ║                                                ║
 ╚════════════════════════════════════════════════╝
   `);
