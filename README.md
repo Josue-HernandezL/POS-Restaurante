@@ -9,6 +9,7 @@ API REST para sistema de punto de venta de restaurante usando Express y Firebase
 - [Endpoints de Gestión de Menú](#endpoints-de-gestión-de-menú)
   - [Categorías](#categorías)
   - [Ítems del Menú](#ítems-del-menú)
+- [Endpoints de Reservaciones](#endpoints-de-reservaciones)
 - [Roles Disponibles](#roles-disponibles)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 
@@ -739,6 +740,453 @@ Authorization: Bearer {token}
 curl -X DELETE http://localhost:3000/api/items/item789xyz \
   -H "Authorization: Bearer {token}"
 ```
+
+---
+
+## Endpoints de Reservaciones
+
+### 📅 Crear Reservación
+
+**Endpoint:** `POST /api/reservaciones`
+
+**Descripción:** Crea una nueva reservación en el sistema. Valida automáticamente conflictos de mesa en una ventana de 2 horas.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "nombreCliente": "María García",
+  "telefono": "5551234567",
+  "fecha": "2025-11-25",
+  "hora": "19:30",
+  "numeroPersonas": 4,
+  "mesaAsignada": "Mesa 5",
+  "notas": "Cliente prefiere área tranquila"
+}
+```
+
+**Campos:**
+- `nombreCliente` (string, requerido): Nombre del cliente (3-100 caracteres)
+- `telefono` (string, requerido): Teléfono de contacto (mínimo 10 dígitos)
+- `fecha` (string, requerido): Fecha de la reservación en formato YYYY-MM-DD
+- `hora` (string, requerido): Hora de la reservación en formato HH:MM (24 horas)
+- `numeroPersonas` (number, requerido): Cantidad de personas (1-20)
+- `mesaAsignada` (string, requerido): Identificador de la mesa (3-50 caracteres)
+- `notas` (string, opcional): Notas o comentarios adicionales (máx. 500 caracteres)
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Reservación creada exitosamente",
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila",
+    "estado": "pendiente",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Campos faltantes, inválidos, o conflicto de mesa
+- `401`: Token no proporcionado o inválido
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/reservaciones \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila"
+  }'
+```
+
+---
+
+### 📋 Listar Reservaciones
+
+**Endpoint:** `GET /api/reservaciones`
+
+**Descripción:** Obtiene todas las reservaciones con opciones de filtrado.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `fecha` (string): Filtrar por fecha específica (formato YYYY-MM-DD)
+- `estado` (string): Filtrar por estado (`pendiente`, `confirmada`, `sentada`, `terminada`, `cancelada`)
+- `mesaAsignada` (string): Filtrar por mesa asignada
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": [
+    {
+      "id": "res123abc",
+      "nombreCliente": "María García",
+      "telefono": "5551234567",
+      "fecha": "2025-11-25",
+      "hora": "19:30",
+      "numeroPersonas": 4,
+      "mesaAsignada": "Mesa 5",
+      "notas": "Cliente prefiere área tranquila",
+      "estado": "pendiente",
+      "creadoEn": "2025-11-20T10:30:00.000Z",
+      "actualizadoEn": "2025-11-20T10:30:00.000Z",
+      "creadoPor": "abc123xyz"
+    },
+    {
+      "id": "res456def",
+      "nombreCliente": "Carlos López",
+      "telefono": "5559876543",
+      "fecha": "2025-11-25",
+      "hora": "20:00",
+      "numeroPersonas": 2,
+      "mesaAsignada": "Mesa 3",
+      "notas": "",
+      "estado": "confirmada",
+      "creadoEn": "2025-11-20T11:00:00.000Z",
+      "actualizadoEn": "2025-11-20T14:30:00.000Z",
+      "creadoPor": "abc123xyz"
+    }
+  ],
+  "total": 2
+}
+```
+
+**Ejemplo con cURL:**
+```bash
+# Todas las reservaciones
+curl -X GET http://localhost:3000/api/reservaciones \
+  -H "Authorization: Bearer {token}"
+
+# Reservaciones de una fecha específica
+curl -X GET "http://localhost:3000/api/reservaciones?fecha=2025-11-25" \
+  -H "Authorization: Bearer {token}"
+
+# Reservaciones pendientes de una mesa
+curl -X GET "http://localhost:3000/api/reservaciones?estado=pendiente&mesaAsignada=Mesa%205" \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🔍 Obtener Reservación por ID
+
+**Endpoint:** `GET /api/reservaciones/:id`
+
+**Descripción:** Obtiene los detalles de una reservación específica.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila",
+    "estado": "pendiente",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Reservación no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/reservaciones/res123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✏️ Actualizar Reservación
+
+**Endpoint:** `PUT /api/reservaciones/:id`
+
+**Descripción:** Actualiza una reservación existente. No se pueden editar reservaciones terminadas o canceladas.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "nombreCliente": "María García Pérez",
+  "telefono": "5551234568",
+  "fecha": "2025-11-26",
+  "hora": "20:00",
+  "numeroPersonas": 5,
+  "mesaAsignada": "Mesa 8",
+  "notas": "Cliente prefiere área tranquila, celebración de cumpleaños",
+  "estado": "confirmada"
+}
+```
+
+**Campos actualizables:**
+- `nombreCliente` (string): Nombre del cliente
+- `telefono` (string): Teléfono (mínimo 10 dígitos)
+- `fecha` (string): Fecha (YYYY-MM-DD)
+- `hora` (string): Hora (HH:MM)
+- `numeroPersonas` (number): Cantidad de personas (1-20)
+- `mesaAsignada` (string): Mesa asignada
+- `notas` (string): Notas adicionales
+- `estado` (string): Estado de la reservación
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Reservación actualizada exitosamente",
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García Pérez",
+    "telefono": "5551234568",
+    "fecha": "2025-11-26",
+    "hora": "20:00",
+    "numeroPersonas": 5,
+    "mesaAsignada": "Mesa 8",
+    "notas": "Cliente prefiere área tranquila, celebración de cumpleaños",
+    "estado": "confirmada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T16:45:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos, conflicto de mesa, o reservación terminada/cancelada
+- `404`: Reservación no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/reservaciones/res123abc \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "numeroPersonas": 5,
+    "estado": "confirmada"
+  }'
+```
+
+---
+
+### 🪑 Marcar Reservación como Sentada
+
+**Endpoint:** `PATCH /api/reservaciones/:id/sentar`
+
+**Descripción:** Marca una reservación como sentada cuando el cliente llega al restaurante. Solo permite cambiar de estado `pendiente` o `confirmada` a `sentada`.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Reservación marcada como sentada",
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila",
+    "estado": "sentada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-25T19:32:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: La reservación no está en estado pendiente o confirmada
+- `404`: Reservación no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/reservaciones/res123abc/sentar \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✅ Marcar Reservación como Terminada
+
+**Endpoint:** `PATCH /api/reservaciones/:id/terminar`
+
+**Descripción:** Marca una reservación como terminada cuando el cliente finaliza su visita. Solo permite cambiar de estado `sentada` a `terminada`.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Reservación marcada como terminada",
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila",
+    "estado": "terminada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-25T21:15:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: La reservación no está en estado sentada
+- `404`: Reservación no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/reservaciones/res123abc/terminar \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ❌ Cancelar Reservación
+
+**Endpoint:** `PATCH /api/reservaciones/:id/cancelar`
+
+**Descripción:** Cancela una reservación. No se pueden cancelar reservaciones que ya están terminadas o canceladas.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Reservación cancelada exitosamente",
+  "datos": {
+    "id": "res123abc",
+    "nombreCliente": "María García",
+    "telefono": "5551234567",
+    "fecha": "2025-11-25",
+    "hora": "19:30",
+    "numeroPersonas": 4,
+    "mesaAsignada": "Mesa 5",
+    "notas": "Cliente prefiere área tranquila",
+    "estado": "cancelada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-25T18:00:00.000Z",
+    "creadoPor": "abc123xyz"
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: La reservación ya está terminada o cancelada
+- `404`: Reservación no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/reservaciones/res123abc/cancelar \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 📊 Estados de Reservación
+
+Las reservaciones siguen un flujo de estados específico:
+
+```
+pendiente → confirmada → sentada → terminada
+    ↓           ↓           ↓
+         cancelada    cancelada
+```
+
+| Estado | Descripción | Transiciones Permitidas |
+|--------|-------------|------------------------|
+| `pendiente` | Reservación creada, esperando confirmación | → confirmada, sentada, cancelada |
+| `confirmada` | Reservación confirmada por el cliente | → sentada, cancelada |
+| `sentada` | Cliente ha llegado y está en la mesa | → terminada, cancelada |
+| `terminada` | Cliente ha finalizado su visita | (estado final) |
+| `cancelada` | Reservación cancelada | (estado final) |
+
+**Reglas importantes:**
+- Una reservación en estado `terminada` o `cancelada` no puede ser editada
+- Solo las reservaciones en estado `sentada` pueden marcarse como terminadas
+- Solo las reservaciones en estado `pendiente` o `confirmada` pueden marcarse como sentadas
+- El sistema valida automáticamente conflictos de mesa (ventana de 2 horas)
+- Los números de teléfono deben tener mínimo 10 dígitos
+- El número de personas permitido es de 1 a 20
 
 ---
 

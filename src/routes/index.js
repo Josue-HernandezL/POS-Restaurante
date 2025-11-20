@@ -3,6 +3,7 @@ const router = express.Router();
 const authRoutes = require('./authRoutes');
 const categoriaRoutes = require('./categoriaRoutes');
 const itemMenuRoutes = require('./itemMenuRoutes');
+const reservacionRoutes = require('./reservacionRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -12,6 +13,9 @@ router.use('/categorias', categoriaRoutes);
 
 // Rutas de ítems del menú
 router.use('/items', itemMenuRoutes);
+
+// Rutas de reservaciones
+router.use('/reservaciones', reservacionRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -37,6 +41,15 @@ router.get('/', (req, res) => {
         obtener: 'GET /api/items/:id (requiere token)',
         actualizar: 'PUT /api/items/:id (requiere token - admin/gerente)',
         eliminar: 'DELETE /api/items/:id (requiere token - admin/gerente)',
+      },
+      reservaciones: {
+        crear: 'POST /api/reservaciones (requiere token)',
+        listar: 'GET /api/reservaciones (requiere token)',
+        obtener: 'GET /api/reservaciones/:id (requiere token)',
+        actualizar: 'PUT /api/reservaciones/:id (requiere token)',
+        sentar: 'PATCH /api/reservaciones/:id/sentar (requiere token)',
+        terminar: 'PATCH /api/reservaciones/:id/terminar (requiere token)',
+        cancelar: 'PATCH /api/reservaciones/:id/cancelar (requiere token)',
       },
     },
   });
