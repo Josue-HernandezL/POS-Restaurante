@@ -6,6 +6,9 @@ API REST para sistema de punto de venta de restaurante usando Express y Firebase
 
 - [Configuración Inicial](#configuración-inicial)
 - [Endpoints de Autenticación](#endpoints-de-autenticación)
+- [Endpoints de Gestión de Menú](#endpoints-de-gestión-de-menú)
+  - [Categorías](#categorías)
+  - [Ítems del Menú](#ítems-del-menú)
 - [Roles Disponibles](#roles-disponibles)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 
@@ -203,6 +206,538 @@ Authorization: Bearer {token}
 ```bash
 curl -X GET http://localhost:3000/api/auth/perfil \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+---
+
+## Endpoints de Gestión de Menú
+
+### Categorías
+
+#### 📁 Crear Categoría
+
+**Endpoint:** `POST /api/categorias`
+
+**Descripción:** Crea una nueva categoría para el menú.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "nombre": "Bebidas",
+  "descripcion": "Bebidas frías y calientes"
+}
+```
+
+**Campos:**
+- `nombre` (string, requerido): Nombre de la categoría (3-50 caracteres, único)
+- `descripcion` (string, requerido): Descripción de la categoría (máx. 200 caracteres)
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Categoría creada exitosamente",
+  "datos": {
+    "id": "cat123abc",
+    "nombre": "Bebidas",
+    "descripcion": "Bebidas frías y calientes",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Campos faltantes o inválidos
+- `401`: Token no proporcionado o inválido
+- `403`: Sin permisos (no es admin ni gerente)
+- `409`: Ya existe una categoría con ese nombre
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/categorias \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nombre": "Bebidas",
+    "descripcion": "Bebidas frías y calientes"
+  }'
+```
+
+---
+
+#### 📋 Listar Categorías
+
+**Endpoint:** `GET /api/categorias`
+
+**Descripción:** Obtiene todas las categorías.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `activo` (boolean): Filtrar por estado activo (`true` o `false`)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": [
+    {
+      "id": "cat123abc",
+      "nombre": "Bebidas",
+      "descripcion": "Bebidas frías y calientes",
+      "creadoEn": "2025-11-20T10:30:00.000Z",
+      "actualizadoEn": "2025-11-20T10:30:00.000Z",
+      "activo": true
+    },
+    {
+      "id": "cat456def",
+      "nombre": "Entradas",
+      "descripcion": "Aperitivos y entradas",
+      "creadoEn": "2025-11-20T11:00:00.000Z",
+      "actualizadoEn": "2025-11-20T11:00:00.000Z",
+      "activo": true
+    }
+  ],
+  "total": 2
+}
+```
+
+**Ejemplo con cURL:**
+```bash
+# Todas las categorías
+curl -X GET http://localhost:3000/api/categorias \
+  -H "Authorization: Bearer {token}"
+
+# Solo categorías activas
+curl -X GET "http://localhost:3000/api/categorias?activo=true" \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+#### 🔍 Obtener Categoría por ID
+
+**Endpoint:** `GET /api/categorias/:id`
+
+**Descripción:** Obtiene los detalles de una categoría específica.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "cat123abc",
+    "nombre": "Bebidas",
+    "descripcion": "Bebidas frías y calientes",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Categoría no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/categorias/cat123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+#### ✏️ Actualizar Categoría
+
+**Endpoint:** `PUT /api/categorias/:id`
+
+**Descripción:** Actualiza una categoría existente.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "nombre": "Bebidas Premium",
+  "descripcion": "Bebidas premium y especiales",
+  "activo": true
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Categoría actualizada exitosamente",
+  "datos": {
+    "id": "cat123abc",
+    "nombre": "Bebidas Premium",
+    "descripcion": "Bebidas premium y especiales",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T15:45:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos
+- `403`: Sin permisos
+- `404`: Categoría no encontrada
+- `409`: El nuevo nombre ya existe
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/categorias/cat123abc \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nombre": "Bebidas Premium"
+  }'
+```
+
+---
+
+#### 🗑️ Eliminar Categoría
+
+**Endpoint:** `DELETE /api/categorias/:id`
+
+**Descripción:** Elimina una categoría (soft delete - marca como inactiva).
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Categoría eliminada exitosamente"
+}
+```
+
+**Errores posibles:**
+- `400`: La categoría tiene ítems asociados activos
+- `403`: Sin permisos
+- `404`: Categoría no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X DELETE http://localhost:3000/api/categorias/cat123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### Ítems del Menú
+
+#### 🍽️ Crear Ítem del Menú
+
+**Endpoint:** `POST /api/items`
+
+**Descripción:** Crea un nuevo ítem en el menú.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "nombre": "Café Americano",
+  "categoriaId": "cat123abc",
+  "precio": 35.00,
+  "disponibilidad": true,
+  "descripcion": "Café americano preparado con granos seleccionados"
+}
+```
+
+**Campos:**
+- `nombre` (string, requerido): Nombre del ítem (3-100 caracteres)
+- `categoriaId` (string, requerido): ID de la categoría (debe existir y estar activa)
+- `precio` (number, requerido): Precio del ítem (≥ 0)
+- `disponibilidad` (boolean, opcional): Si el ítem está disponible (default: true)
+- `descripcion` (string, requerido): Descripción del ítem (máx. 300 caracteres)
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Ítem creado exitosamente",
+  "datos": {
+    "id": "item789xyz",
+    "nombre": "Café Americano",
+    "categoriaId": "cat123abc",
+    "precio": 35,
+    "disponibilidad": true,
+    "descripcion": "Café americano preparado con granos seleccionados",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true,
+    "categoria": {
+      "id": "cat123abc",
+      "nombre": "Bebidas"
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Campos faltantes, inválidos, o categoría inactiva
+- `403`: Sin permisos
+- `404`: Categoría no existe
+- `409`: Ya existe un ítem con ese nombre en la categoría
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/items \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "nombre": "Café Americano",
+    "categoriaId": "cat123abc",
+    "precio": 35.00,
+    "disponibilidad": true,
+    "descripcion": "Café americano preparado con granos seleccionados"
+  }'
+```
+
+---
+
+#### 📋 Listar Ítems del Menú
+
+**Endpoint:** `GET /api/items`
+
+**Descripción:** Obtiene todos los ítems del menú.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `categoriaId` (string): Filtrar por categoría específica
+- `disponibilidad` (boolean): Filtrar por disponibilidad (`true` o `false`)
+- `activo` (boolean): Filtrar por estado activo (`true` o `false`)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": [
+    {
+      "id": "item789xyz",
+      "nombre": "Café Americano",
+      "categoriaId": "cat123abc",
+      "precio": 35,
+      "disponibilidad": true,
+      "descripcion": "Café americano preparado con granos seleccionados",
+      "creadoEn": "2025-11-20T10:30:00.000Z",
+      "actualizadoEn": "2025-11-20T10:30:00.000Z",
+      "activo": true,
+      "categoria": {
+        "id": "cat123abc",
+        "nombre": "Bebidas"
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
+**Ejemplo con cURL:**
+```bash
+# Todos los ítems
+curl -X GET http://localhost:3000/api/items \
+  -H "Authorization: Bearer {token}"
+
+# Solo ítems disponibles de una categoría
+curl -X GET "http://localhost:3000/api/items?categoriaId=cat123abc&disponibilidad=true" \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+#### 🔍 Obtener Ítem por ID
+
+**Endpoint:** `GET /api/items/:id`
+
+**Descripción:** Obtiene los detalles de un ítem específico.
+
+**Autenticación:** Requerida
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "item789xyz",
+    "nombre": "Café Americano",
+    "categoriaId": "cat123abc",
+    "precio": 35,
+    "disponibilidad": true,
+    "descripcion": "Café americano preparado con granos seleccionados",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true,
+    "categoria": {
+      "id": "cat123abc",
+      "nombre": "Bebidas",
+      "descripcion": "Bebidas frías y calientes"
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Ítem no encontrado
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/items/item789xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+#### ✏️ Actualizar Ítem
+
+**Endpoint:** `PUT /api/items/:id`
+
+**Descripción:** Actualiza un ítem existente del menú.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "nombre": "Café Americano Grande",
+  "precio": 45.00,
+  "disponibilidad": false,
+  "descripcion": "Café americano grande preparado con granos premium"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Ítem actualizado exitosamente",
+  "datos": {
+    "id": "item789xyz",
+    "nombre": "Café Americano Grande",
+    "categoriaId": "cat123abc",
+    "precio": 45,
+    "disponibilidad": false,
+    "descripcion": "Café americano grande preparado con granos premium",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T16:20:00.000Z",
+    "activo": true,
+    "categoria": {
+      "id": "cat123abc",
+      "nombre": "Bebidas"
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos o categoría inactiva
+- `403`: Sin permisos
+- `404`: Ítem o categoría no encontrada
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/items/item789xyz \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "precio": 45.00,
+    "disponibilidad": false
+  }'
+```
+
+---
+
+#### 🗑️ Eliminar Ítem
+
+**Endpoint:** `DELETE /api/items/:id`
+
+**Descripción:** Elimina un ítem del menú (soft delete - marca como inactivo).
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Ítem eliminado exitosamente"
+}
+```
+
+**Errores posibles:**
+- `403`: Sin permisos
+- `404`: Ítem no encontrado
+
+**Ejemplo con cURL:**
+```bash
+curl -X DELETE http://localhost:3000/api/items/item789xyz \
+  -H "Authorization: Bearer {token}"
 ```
 
 ---

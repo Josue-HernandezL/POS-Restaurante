@@ -57,6 +57,10 @@ app.listen(PORT, () => {
 ║   • POST /api/auth/register                    ║
 ║   • POST /api/auth/login                       ║
 ║   • GET  /api/auth/perfil                      ║
+║   • POST /api/categorias                       ║
+║   • GET  /api/categorias                       ║
+║   • POST /api/items                            ║
+║   • GET  /api/items                            ║
 ║                                                ║
 ╚════════════════════════════════════════════════╝
   `);
