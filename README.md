@@ -2587,6 +2587,475 @@ Los pedidos siguen un flujo de estados bien definido:
 
 ---
 
+## 👨‍🍳 Módulo de Cocina
+
+El módulo de cocina permite al personal de cocina gestionar los pedidos desde su perspectiva, visualizando solo los pedidos relevantes y cambiando sus estados según el flujo de preparación.
+
+### 📋 Listar Pedidos de Cocina
+
+**Endpoint:** `GET /api/cocina/pedidos`
+
+**Descripción:** Obtiene todos los pedidos activos para cocina, agrupados por estado (pendientes, en preparación, listos) con totales. Ordena los pedidos del más antiguo al más reciente.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `estado`: Filtrar por estado específico
+  - Valores: `pendiente`, `en_preparacion`, `listo`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "pedidos": [
+      {
+        "id": "k1LVWvV0Nvoz7kY5bRcI",
+        "mesaId": "9clzrKWz1eKReUqHL4XP",
+        "numeroMesa": "Mesa 11",
+        "items": [
+          {
+            "itemId": "8nKgku3ZZb0LAy4rjGpV",
+            "nombre": "Café Americano",
+            "descripcion": "Café americano preparado con granos seleccionados",
+            "categoria": "Bebidas",
+            "precioUnitario": 35,
+            "cantidad": 2,
+            "observaciones": "Sin azúcar",
+            "subtotal": 70
+          }
+        ],
+        "observaciones": "Cliente prefiere servicio rápido",
+        "subtotal": 70,
+        "impuestos": 11.2,
+        "total": 81.2,
+        "estado": "pendiente",
+        "meseroId": "9lKe5hLK5bHOMO59KGkc",
+        "meseroNombre": "Juan Pérez",
+        "creadoEn": "2025-11-20T10:30:00.000Z",
+        "actualizadoEn": "2025-11-20T10:30:00.000Z",
+        "activo": true
+      }
+    ],
+    "agrupados": {
+      "pendientes": [...],
+      "en_preparacion": [...],
+      "listos": [...]
+    },
+    "totales": {
+      "pendientes": 3,
+      "en_preparacion": 2,
+      "listos": 1,
+      "total": 6
+    }
+  }
+}
+```
+
+**Ejemplos de uso:**
+
+**Todos los pedidos de cocina:**
+```bash
+curl -X GET http://localhost:3000/api/cocina/pedidos \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo pedidos pendientes:**
+```bash
+curl -X GET "http://localhost:3000/api/cocina/pedidos?estado=pendiente" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo pedidos en preparación:**
+```bash
+curl -X GET "http://localhost:3000/api/cocina/pedidos?estado=en_preparacion" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo pedidos listos:**
+```bash
+curl -X GET "http://localhost:3000/api/cocina/pedidos?estado=listo" \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🔍 Obtener Detalle de Pedido (Cocina)
+
+**Endpoint:** `GET /api/cocina/pedidos/:id`
+
+**Descripción:** Obtiene los detalles completos de un pedido específico desde la vista de cocina.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "k1LVWvV0Nvoz7kY5bRcI",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [
+      {
+        "itemId": "8nKgku3ZZb0LAy4rjGpV",
+        "nombre": "Café Americano",
+        "descripcion": "Café americano preparado con granos seleccionados",
+        "categoria": "Bebidas",
+        "precioUnitario": 35,
+        "cantidad": 2,
+        "observaciones": "Sin azúcar",
+        "subtotal": 70
+      }
+    ],
+    "observaciones": "Cliente prefiere servicio rápido",
+    "subtotal": 70,
+    "impuestos": 11.2,
+    "total": 81.2,
+    "estado": "pendiente",
+    "meseroId": "9lKe5hLK5bHOMO59KGkc",
+    "meseroNombre": "Juan Pérez",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Pedido no encontrado o no está en estados de cocina
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/cocina/pedidos/k1LVWvV0Nvoz7kY5bRcI \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ▶️ Iniciar Preparación de Pedido
+
+**Endpoint:** `PATCH /api/cocina/pedidos/:id/iniciar`
+
+**Descripción:** Cambia el estado del pedido de `pendiente` a `en_preparacion`. Se usa cuando la cocina comienza a preparar el pedido.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido en preparación",
+  "datos": {
+    "id": "k1LVWvV0Nvoz7kY5bRcI",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "estado": "en_preparacion",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:35:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Pedido no está en estado pendiente
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/cocina/pedidos/k1LVWvV0Nvoz7kY5bRcI/iniciar \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✅ Marcar Pedido como Listo
+
+**Endpoint:** `PATCH /api/cocina/pedidos/:id/listo`
+
+**Descripción:** Cambia el estado del pedido de `en_preparacion` a `listo`. Se usa cuando la cocina termina de preparar el pedido y está listo para servir.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido listo para servir",
+  "datos": {
+    "id": "k1LVWvV0Nvoz7kY5bRcI",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "estado": "listo",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:40:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Pedido no está en estado en_preparacion
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/cocina/pedidos/k1LVWvV0Nvoz7kY5bRcI/listo \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🔄 Cambiar Estado desde Cocina
+
+**Endpoint:** `PATCH /api/cocina/pedidos/:id/estado`
+
+**Descripción:** Cambia el estado del pedido a cualquier estado válido de cocina. Permite transiciones más flexibles que los endpoints específicos.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Body:**
+```json
+{
+  "estado": "en_preparacion"
+}
+```
+
+**Campos:**
+- `estado` (string, requerido): Nuevo estado del pedido
+  - Valores permitidos: `pendiente`, `en_preparacion`, `listo`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Estado del pedido actualizado a: en_preparacion",
+  "datos": {
+    "id": "k1LVWvV0Nvoz7kY5bRcI",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "estado": "en_preparacion",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:35:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Estado inválido (no es pendiente, en_preparacion o listo)
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/cocina/pedidos/k1LVWvV0Nvoz7kY5bRcI/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "en_preparacion"}'
+```
+
+---
+
+### 📊 Estadísticas de Cocina
+
+**Endpoint:** `GET /api/cocina/estadisticas`
+
+**Descripción:** Obtiene estadísticas de los pedidos procesados por cocina, incluyendo totales por estado, tiempo promedio de preparación y los items más pedidos.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `fecha`: Filtrar estadísticas por fecha específica (formato: YYYY-MM-DD)
+  - Si no se proporciona, muestra estadísticas del día actual
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "total_pedidos": 15,
+    "pendientes": 3,
+    "en_preparacion": 5,
+    "listos": 2,
+    "entregados": 4,
+    "cancelados": 1,
+    "tiempo_promedio_preparacion": 245,
+    "items_mas_pedidos": [
+      {
+        "nombre": "Café Americano",
+        "cantidad": 25
+      },
+      {
+        "nombre": "Hamburguesa Clásica",
+        "cantidad": 18
+      },
+      {
+        "nombre": "Ensalada César",
+        "cantidad": 12
+      }
+    ]
+  }
+}
+```
+
+**Campos de respuesta:**
+- `total_pedidos`: Total de pedidos del período
+- `pendientes`: Cantidad de pedidos pendientes
+- `en_preparacion`: Cantidad de pedidos en preparación
+- `listos`: Cantidad de pedidos listos
+- `entregados`: Cantidad de pedidos entregados
+- `cancelados`: Cantidad de pedidos cancelados
+- `tiempo_promedio_preparacion`: Tiempo promedio en segundos desde que se inicia la preparación hasta que está listo
+- `items_mas_pedidos`: Top 10 de items más pedidos con sus cantidades totales
+
+**Ejemplos de uso:**
+
+**Estadísticas del día actual:**
+```bash
+curl -X GET http://localhost:3000/api/cocina/estadisticas \
+  -H "Authorization: Bearer {token}"
+```
+
+**Estadísticas de una fecha específica:**
+```bash
+curl -X GET "http://localhost:3000/api/cocina/estadisticas?fecha=2025-11-20" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Errores posibles:**
+- `400`: Formato de fecha inválido
+- `401`: No autenticado
+- `500`: Error del servidor
+
+---
+
+### 🔄 Flujo de Trabajo en Cocina
+
+El módulo de cocina sigue este flujo de trabajo optimizado:
+
+```
+MESERO ENVÍA → COCINA RECIBE → COCINA PREPARA → MESERO RECOGE → MESERO ENTREGA
+    ↓              ↓                  ↓               ↓                ↓
+pendiente → en_preparacion → listo → (mesero entrega) → entregado
+```
+
+**1. Recepción de pedidos (Estado: pendiente)**
+- La cocina ve nuevos pedidos en la sección "Pendientes"
+- Muestra: mesa, items, cantidades, observaciones
+- Ordenados del más antiguo al más reciente
+- Acción: Click en "Iniciar preparación" → `PATCH /api/cocina/pedidos/:id/iniciar`
+
+**2. Preparación (Estado: en_preparacion)**
+- Pedido aparece en sección "En Preparación"
+- Cocineros preparan los items según observaciones
+- Acción: Al terminar → `PATCH /api/cocina/pedidos/:id/listo`
+
+**3. Listo para servir (Estado: listo)**
+- Pedido aparece en sección "Listos"
+- Mesero recoge el pedido
+- Acción: Mesero entrega y marca como entregado desde módulo de pedidos
+
+### 📱 Interfaz Sugerida para Cocina
+
+**Vista principal con tres columnas:**
+
+```
+┌──────────────┬──────────────┬──────────────┐
+│  PENDIENTES  │ PREPARACIÓN  │    LISTOS    │
+│      3       │      5       │      2       │
+├──────────────┼──────────────┼──────────────┤
+│              │              │              │
+│  Mesa 5      │  Mesa 2      │  Mesa 8      │
+│  2 items     │  3 items     │  1 item      │
+│  [INICIAR]   │  [MARCAR OK] │  🔔          │
+│              │              │              │
+│  Mesa 11     │  Mesa 7      │  Mesa 3      │
+│  1 item      │  2 items     │  4 items     │
+│  [INICIAR]   │  [MARCAR OK] │  🔔          │
+└──────────────┴──────────────┴──────────────┘
+```
+
+### 💡 Características del Módulo de Cocina
+
+✅ **Agrupación automática:** Los pedidos se agrupan por estado (pendientes, en_preparacion, listos)
+
+✅ **Contadores en tiempo real:** Muestra totales de cada grupo para mejor visibilidad
+
+✅ **Ordenamiento inteligente:** Los pedidos más antiguos aparecen primero
+
+✅ **Vista simplificada:** Solo muestra estados relevantes para cocina (excluye entregado y cancelado de la vista principal)
+
+✅ **Información completa:** Muestra mesa, items, cantidades, observaciones generales y observaciones por item
+
+✅ **Transiciones validadas:** Solo permite cambios de estado válidos
+
+✅ **Estadísticas útiles:** Tiempo promedio de preparación y items más pedidos
+
+✅ **Filtrado flexible:** Puede filtrar por estado específico o ver todos los pedidos
+
+### 🎯 Estados de Pedido en Cocina
+
+| Estado | Descripción | Acción disponible |
+|--------|-------------|-------------------|
+| `pendiente` | Nuevo pedido recibido | Iniciar preparación |
+| `en_preparacion` | Se está preparando | Marcar como listo |
+| `listo` | Terminado, esperando mesero | (Mesero lo recoge) |
+
+**Nota:** Los estados `entregado` y `cancelado` no se muestran en la vista principal de cocina, pero se incluyen en las estadísticas.
+
+---
+
 ## Roles Disponibles
 
 | Rol | Descripción |

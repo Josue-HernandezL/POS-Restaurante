@@ -158,6 +158,7 @@ class Pedido {
    */
   toJSON() {
     return {
+      id: this.id,
       mesaId: this.mesaId,
       numeroMesa: this.numeroMesa,
       items: this.items,

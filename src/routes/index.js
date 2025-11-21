@@ -7,6 +7,7 @@ const reservacionRoutes = require('./reservacionRoutes');
 const configuracionRoutes = require('./configuracionRoutes');
 const mesaRoutes = require('./mesaRoutes');
 const pedidoRoutes = require('./pedidoRoutes');
+const cocinaRoutes = require('./cocinaRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -28,6 +29,9 @@ router.use('/mesas', mesaRoutes);
 
 // Rutas de pedidos
 router.use('/pedidos', pedidoRoutes);
+
+// Rutas de cocina
+router.use('/cocina', cocinaRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -86,6 +90,14 @@ router.get('/', (req, res) => {
         cambiarEstado: 'PATCH /api/pedidos/:id/estado (requiere token)',
         cancelar: 'PATCH /api/pedidos/:id/cancelar (requiere token)',
         eliminar: 'DELETE /api/pedidos/:id (requiere token - admin/gerente)',
+      },
+      cocina: {
+        listarPedidos: 'GET /api/cocina/pedidos (requiere token)',
+        obtenerDetalle: 'GET /api/cocina/pedidos/:id (requiere token)',
+        iniciarPreparacion: 'PATCH /api/cocina/pedidos/:id/iniciar (requiere token)',
+        marcarListo: 'PATCH /api/cocina/pedidos/:id/listo (requiere token)',
+        cambiarEstado: 'PATCH /api/cocina/pedidos/:id/estado (requiere token)',
+        estadisticas: 'GET /api/cocina/estadisticas (requiere token)',
       },
     },
   });
