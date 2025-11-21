@@ -3702,6 +3702,733 @@ Cada persona puede pagar su parte, pero el sistema registra un solo pago total d
 
 ---
 
+## Módulo: Usuarios, Roles y Permisos
+
+Este módulo implementa un sistema completo de gestión de usuarios con control de acceso basado en roles (RBAC) y registro de auditoría. El módulo está compuesto por tres componentes principales:
+
+### Componentes del Módulo
+
+1. **Usuarios**: Gestión completa de usuarios del sistema (CRUD)
+2. **Roles y Permisos**: Sistema de permisos granulares por rol
+3. **Registro de Autorizaciones**: Auditoría automática de todas las acciones importantes
+
+### Características Principales
+
+- ✅ CRUD completo de usuarios con validación de PIN (4-6 dígitos)
+- ✅ Sistema de roles con permisos granulares en español
+- ✅ Hashing seguro de PINs con bcrypt
+- ✅ Registro automático de auditoría para todas las operaciones
+- ✅ Middleware de permisos reutilizable
+- ✅ Compatibilidad con rol `admin` legacy (acceso completo)
+- ✅ Filtrado y estadísticas de autorizaciones
+
+---
+
+### 1. Gestión de Usuarios
+
+#### Endpoints Disponibles
+
+| Método | Endpoint | Descripción | Permisos Requeridos |
+|--------|----------|-------------|---------------------|
+| POST | `/api/usuarios` | Crear nuevo usuario | `gestionar_usuarios` |
+| GET | `/api/usuarios` | Listar usuarios | `gestionar_usuarios` o `ver_todo` |
+| GET | `/api/usuarios/:id` | Obtener usuario por ID | `gestionar_usuarios` o `ver_todo` |
+| PUT | `/api/usuarios/:id` | Actualizar usuario | `gestionar_usuarios` o `editar_todo` |
+| DELETE | `/api/usuarios/:id` | Eliminar usuario | `gestionar_usuarios` o `eliminar_todo` |
+| POST | `/api/usuarios/:id/verificar-pin` | Verificar PIN de usuario | Cualquier usuario autenticado |
+
+#### Modelo de Usuario
+
+```json
+{
+  "id": "abc123",
+  "nombre": "María García",
+  "correo": "maria@restaurante.com",
+  "rol": "cajero",
+  "activo": true,
+  "creadoEn": "2024-01-15T10:30:00.000Z",
+  "actualizadoEn": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Nota**: El PIN se almacena hasheado con bcrypt y nunca se expone en las respuestas.
+
+#### Crear Usuario
+
+```bash
+curl -X POST http://localhost:3000/api/usuarios \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{
+    "nombre": "María García",
+    "correo": "maria@restaurante.com",
+    "rol": "cajero",
+    "pinSeguridad": "5678",
+    "activo": true
+  }'
+```
+
+**Validaciones**:
+- `nombre`: 3-100 caracteres
+- `correo`: Formato de email válido, único en el sistema
+- `rol`: Debe ser uno de: `dueno`, `gerente`, `cajero`, `mesero`, `cocinero`
+- `pinSeguridad`: 4-6 dígitos numéricos
+- `activo`: Booleano (opcional, por defecto `true`)
+
+**Respuesta exitosa** (201):
+```json
+{
+  "mensaje": "Usuario creado exitosamente",
+  "usuario": {
+    "id": "abc123",
+    "nombre": "María García",
+    "correo": "maria@restaurante.com",
+    "rol": "cajero",
+    "activo": true,
+    "creadoEn": "2024-01-15T10:30:00.000Z",
+    "actualizadoEn": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+#### Listar Usuarios
+
+```bash
+# Listar todos los usuarios
+curl -X GET http://localhost:3000/api/usuarios \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por estado activo
+curl -X GET "http://localhost:3000/api/usuarios?activo=true" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por rol
+curl -X GET "http://localhost:3000/api/usuarios?rol=cajero" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "usuarios": [
+    {
+      "id": "abc123",
+      "nombre": "María García",
+      "correo": "maria@restaurante.com",
+      "rol": "cajero",
+      "activo": true,
+      "creadoEn": "2024-01-15T10:30:00.000Z",
+      "actualizadoEn": "2024-01-15T10:30:00.000Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+#### Obtener Usuario por ID
+
+```bash
+curl -X GET http://localhost:3000/api/usuarios/abc123 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "usuario": {
+    "id": "abc123",
+    "nombre": "María García",
+    "correo": "maria@restaurante.com",
+    "rol": "cajero",
+    "activo": true,
+    "creadoEn": "2024-01-15T10:30:00.000Z",
+    "actualizadoEn": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+#### Actualizar Usuario
+
+```bash
+curl -X PUT http://localhost:3000/api/usuarios/abc123 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{
+    "nombre": "María García López",
+    "rol": "gerente",
+    "pinSeguridad": "123456",
+    "activo": true
+  }'
+```
+
+**Campos actualizables**:
+- `nombre`: Nuevo nombre (opcional)
+- `correo`: Nuevo correo (opcional, debe ser único)
+- `rol`: Nuevo rol (opcional)
+- `pinSeguridad`: Nuevo PIN (opcional, se re-hasheará automáticamente)
+- `activo`: Estado activo (opcional)
+
+**Respuesta exitosa** (200):
+```json
+{
+  "mensaje": "Usuario actualizado exitosamente",
+  "usuario": {
+    "id": "abc123",
+    "nombre": "María García López",
+    "correo": "maria@restaurante.com",
+    "rol": "gerente",
+    "activo": true,
+    "creadoEn": "2024-01-15T10:30:00.000Z",
+    "actualizadoEn": "2024-01-15T11:45:00.000Z"
+  }
+}
+```
+
+#### Eliminar Usuario
+
+```bash
+curl -X DELETE http://localhost:3000/api/usuarios/abc123 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Nota**: No puedes eliminar tu propio usuario (auto-eliminación bloqueada).
+
+**Respuesta exitosa** (200):
+```json
+{
+  "mensaje": "Usuario eliminado exitosamente"
+}
+```
+
+#### Verificar PIN
+
+```bash
+curl -X POST http://localhost:3000/api/usuarios/abc123/verificar-pin \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{
+    "pin": "5678"
+  }'
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "valido": true,
+  "mensaje": "PIN verificado correctamente"
+}
+```
+
+**Respuesta con PIN incorrecto** (401):
+```json
+{
+  "valido": false,
+  "mensaje": "PIN incorrecto"
+}
+```
+
+---
+
+### 2. Roles y Permisos
+
+#### Endpoints Disponibles
+
+| Método | Endpoint | Descripción | Permisos Requeridos |
+|--------|----------|-------------|---------------------|
+| GET | `/api/roles` | Listar todos los roles | Usuario autenticado |
+| GET | `/api/roles/:id` | Obtener rol por ID | Usuario autenticado |
+| GET | `/api/roles/permisos` | Listar todos los permisos | Usuario autenticado |
+| GET | `/api/roles/:id/permisos` | Obtener permisos de un rol | Usuario autenticado |
+| GET | `/api/roles/:id/verificar-permiso/:permiso` | Verificar si rol tiene permiso | Usuario autenticado |
+
+#### Roles Disponibles en el Sistema
+
+| Rol | ID | Descripción | Permisos |
+|-----|-----|-------------|----------|
+| Dueño | `dueno` | Control total del sistema | 12 permisos |
+| Gerente | `gerente` | Gestión operativa | 6 permisos |
+| Cajero | `cajero` | Procesamiento de pagos | 3 permisos |
+| Mesero | `mesero` | Atención y pedidos | 4 permisos |
+| Cocinero | `cocinero` | Gestión de cocina | 3 permisos |
+
+#### Permisos del Sistema (17 permisos granulares)
+
+| ID Permiso | Nombre | Descripción |
+|-----------|--------|-------------|
+| `ver_todo` | Ver Todo | Permiso de lectura total |
+| `editar_todo` | Editar Todo | Permiso de edición total |
+| `eliminar_todo` | Eliminar Todo | Permiso de eliminación total |
+| `gestionar_usuarios` | Gestionar Usuarios | Crear, editar, eliminar usuarios |
+| `gestionar_menu` | Gestionar Menú | Gestión completa del menú |
+| `gestionar_pedidos` | Gestionar Pedidos | Gestión completa de pedidos |
+| `ver_pedidos` | Ver Pedidos | Ver pedidos (solo lectura) |
+| `gestionar_pagos` | Gestionar Pagos | Gestión completa de pagos |
+| `procesar_pagos` | Procesar Pagos | Procesar transacciones de pago |
+| `ver_reportes` | Ver Reportes | Acceso a reportes y estadísticas |
+| `gestionar_mesas` | Gestionar Mesas | Gestión completa de mesas |
+| `ver_mesas` | Ver Mesas | Ver estado de mesas (solo lectura) |
+| `gestionar_reservaciones` | Gestionar Reservaciones | Gestión de reservaciones |
+| `ver_cocina` | Ver Cocina | Ver pedidos en cocina |
+| `actualizar_estado_pedido` | Actualizar Estado Pedido | Cambiar estado de pedidos en cocina |
+| `ver_menu` | Ver Menú | Ver menú (solo lectura) |
+| `gestionar_configuracion` | Gestionar Configuración | Gestión de configuración del sistema |
+
+#### Distribución de Permisos por Rol
+
+**Dueño** (12 permisos):
+- ver_todo
+- editar_todo
+- eliminar_todo
+- gestionar_usuarios
+- gestionar_menu
+- gestionar_pedidos
+- gestionar_pagos
+- ver_reportes
+- gestionar_mesas
+- gestionar_reservaciones
+- gestionar_configuracion
+- ver_cocina
+
+**Gerente** (6 permisos):
+- gestionar_pedidos
+- gestionar_pagos
+- ver_reportes
+- gestionar_mesas
+- gestionar_reservaciones
+- ver_cocina
+
+**Cajero** (3 permisos):
+- procesar_pagos
+- ver_pedidos
+- ver_mesas
+
+**Mesero** (4 permisos):
+- gestionar_pedidos
+- ver_menu
+- ver_mesas
+- gestionar_reservaciones
+
+**Cocinero** (3 permisos):
+- ver_cocina
+- actualizar_estado_pedido
+- ver_menu
+
+#### Listar Todos los Roles
+
+```bash
+curl -X GET http://localhost:3000/api/roles \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "roles": [
+    {
+      "id": "dueno",
+      "nombre": "Dueño",
+      "descripcion": "Control total del sistema",
+      "permisos": ["ver_todo", "editar_todo", "eliminar_todo", "..."]
+    },
+    {
+      "id": "gerente",
+      "nombre": "Gerente",
+      "descripcion": "Gestión operativa del restaurante",
+      "permisos": ["gestionar_pedidos", "gestionar_pagos", "..."]
+    }
+  ]
+}
+```
+
+#### Obtener Rol por ID
+
+```bash
+curl -X GET http://localhost:3000/api/roles/gerente \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "rol": {
+    "id": "gerente",
+    "nombre": "Gerente",
+    "descripcion": "Gestión operativa del restaurante",
+    "permisos": [
+      "gestionar_pedidos",
+      "gestionar_pagos",
+      "ver_reportes",
+      "gestionar_mesas",
+      "gestionar_reservaciones",
+      "ver_cocina"
+    ]
+  }
+}
+```
+
+#### Listar Todos los Permisos
+
+```bash
+curl -X GET http://localhost:3000/api/roles/permisos \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "permisos": [
+    {
+      "id": "ver_todo",
+      "nombre": "Ver Todo",
+      "descripcion": "Permiso de lectura total"
+    },
+    {
+      "id": "gestionar_usuarios",
+      "nombre": "Gestionar Usuarios",
+      "descripcion": "Crear, editar, eliminar usuarios"
+    }
+  ]
+}
+```
+
+#### Obtener Permisos de un Rol
+
+```bash
+curl -X GET http://localhost:3000/api/roles/gerente/permisos \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "rol": "gerente",
+  "nombreRol": "Gerente",
+  "permisos": [
+    {
+      "id": "gestionar_pedidos",
+      "nombre": "Gestionar Pedidos",
+      "descripcion": "Gestión completa de pedidos"
+    },
+    {
+      "id": "gestionar_pagos",
+      "nombre": "Gestionar Pagos",
+      "descripcion": "Gestión completa de pagos"
+    }
+  ]
+}
+```
+
+#### Verificar si un Rol tiene un Permiso
+
+```bash
+curl -X GET http://localhost:3000/api/roles/gerente/verificar-permiso/gestionar_pagos \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "rol": "gerente",
+  "nombreRol": "Gerente",
+  "permiso": "gestionar_pagos",
+  "tienePermiso": true
+}
+```
+
+---
+
+### 3. Registro de Autorizaciones (Auditoría)
+
+El sistema registra automáticamente todas las acciones importantes en el módulo de usuarios. Este registro de auditoría permite rastrear quién hizo qué, cuándo y con qué resultado.
+
+#### Endpoints Disponibles
+
+| Método | Endpoint | Descripción | Permisos Requeridos |
+|--------|----------|-------------|---------------------|
+| POST | `/api/autorizaciones` | Registrar autorización | Cualquier usuario autenticado |
+| GET | `/api/autorizaciones` | Listar autorizaciones | `ver_reportes` o `ver_todo` |
+| GET | `/api/autorizaciones/:id` | Obtener autorización por ID | `ver_reportes` o `ver_todo` |
+| GET | `/api/autorizaciones/estadisticas` | Obtener estadísticas | `ver_reportes` o `ver_todo` |
+| GET | `/api/autorizaciones/usuario/:usuarioId` | Obtener autorizaciones de usuario | `ver_todo` o `gestionar_usuarios` |
+
+#### Modelo de Autorización
+
+```json
+{
+  "id": "auth123",
+  "fechaHora": "2024-01-15T10:30:00.000Z",
+  "accion": "crear_usuario",
+  "modulo": "usuarios",
+  "usuario": {
+    "id": "user123",
+    "nombre": "Admin Principal",
+    "rol": "admin"
+  },
+  "autorizadoPor": {
+    "id": "user123",
+    "nombre": "Admin Principal",
+    "rol": "admin"
+  },
+  "detalles": {
+    "nuevoUsuario": "María García",
+    "rol": "cajero"
+  },
+  "ipAddress": "192.168.1.100",
+  "resultado": "exitoso",
+  "requiereAutorizacion": false,
+  "autorizado": true
+}
+```
+
+#### Acciones Registradas Automáticamente
+
+**Módulo Usuarios**:
+- `crear_usuario`: Creación de nuevo usuario
+- `actualizar_usuario`: Actualización de usuario existente
+- `eliminar_usuario`: Eliminación de usuario
+- `cambiar_rol`: Cambio de rol de usuario
+- `cambiar_pin`: Cambio de PIN de usuario
+- `desactivar_usuario`: Desactivación de usuario
+- `activar_usuario`: Activación de usuario
+
+**Otras Acciones**:
+- `intento_acceso_denegado`: Intento de acceso sin permisos
+- `login`: Inicio de sesión
+- `logout`: Cierre de sesión
+- `crear_pedido`, `actualizar_pedido`, `eliminar_pedido`
+- `procesar_pago`, `cancelar_pago`, `reembolso_pago`
+- Y más...
+
+#### Listar Autorizaciones con Filtros
+
+```bash
+# Todas las autorizaciones (últimas 50)
+curl -X GET http://localhost:3000/api/autorizaciones \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por módulo
+curl -X GET "http://localhost:3000/api/autorizaciones?modulo=usuarios" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por acción
+curl -X GET "http://localhost:3000/api/autorizaciones?accion=crear_usuario" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por rango de fechas
+curl -X GET "http://localhost:3000/api/autorizaciones?fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Filtrar por resultado
+curl -X GET "http://localhost:3000/api/autorizaciones?resultado=fallido" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Limitar resultados
+curl -X GET "http://localhost:3000/api/autorizaciones?limite=100" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "autorizaciones": [
+    {
+      "id": "auth123",
+      "fechaHora": "2024-01-15T10:30:00.000Z",
+      "accion": "crear_usuario",
+      "modulo": "usuarios",
+      "usuario": {
+        "id": "user123",
+        "nombre": "Admin Principal",
+        "rol": "admin"
+      },
+      "detalles": {
+        "nuevoUsuario": "María García",
+        "rol": "cajero"
+      },
+      "resultado": "exitoso"
+    }
+  ],
+  "total": 1
+}
+```
+
+#### Obtener Estadísticas de Autorizaciones
+
+```bash
+curl -X GET http://localhost:3000/api/autorizaciones/estadisticas \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "total": 15,
+  "porModulo": {
+    "usuarios": 8,
+    "pedidos": 5,
+    "pagos": 2
+  },
+  "porAccion": {
+    "crear_usuario": 3,
+    "actualizar_usuario": 2,
+    "eliminar_usuario": 1,
+    "intento_acceso_denegado": 2
+  },
+  "porResultado": {
+    "exitoso": 13,
+    "fallido": 2,
+    "pendiente": 0
+  },
+  "porUsuario": {
+    "Admin Principal": 10,
+    "María García": 5
+  },
+  "requierenAutorizacion": 0
+}
+```
+
+#### Obtener Autorizaciones de un Usuario
+
+```bash
+curl -X GET http://localhost:3000/api/autorizaciones/usuario/user123 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "usuario": {
+    "id": "user123",
+    "nombre": "María García"
+  },
+  "autorizaciones": [
+    {
+      "id": "auth456",
+      "fechaHora": "2024-01-15T11:00:00.000Z",
+      "accion": "actualizar_usuario",
+      "modulo": "usuarios",
+      "resultado": "exitoso"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+### Middleware de Permisos
+
+El sistema incluye tres middlewares reutilizables para validar permisos en las rutas:
+
+#### 1. `requierePermiso(...permisos)`
+
+Valida que el usuario tenga **al menos uno** de los permisos especificados.
+
+```javascript
+// El usuario debe tener 'gestionar_usuarios' O 'ver_todo'
+router.get('/usuarios', 
+  verificarToken, 
+  requierePermiso('gestionar_usuarios', 'ver_todo'),
+  obtenerUsuarios
+);
+```
+
+#### 2. `requiereTodosLosPermisos(...permisos)`
+
+Valida que el usuario tenga **todos** los permisos especificados.
+
+```javascript
+// El usuario debe tener 'gestionar_usuarios' Y 'editar_todo'
+router.put('/usuarios/:id', 
+  verificarToken, 
+  requiereTodosLosPermisos('gestionar_usuarios', 'editar_todo'),
+  actualizarUsuario
+);
+```
+
+#### 3. `requiereRol(...roles)`
+
+Valida que el usuario tenga uno de los roles especificados.
+
+```javascript
+// Solo dueños y gerentes pueden acceder
+router.get('/reportes', 
+  verificarToken, 
+  requiereRol('dueno', 'gerente'),
+  obtenerReportes
+);
+```
+
+**Nota**: El rol `admin` tiene acceso completo a todas las rutas por compatibilidad legacy.
+
+---
+
+### Ejemplo de Flujo Completo
+
+#### 1. Login como Admin
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"correoElectronico": "admin@restaurante.com", "contrasena": "admin123"}'
+```
+
+#### 2. Crear Usuario Cajero
+```bash
+curl -X POST http://localhost:3000/api/usuarios \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN_ADMIN>" \
+  -d '{
+    "nombre": "María García",
+    "correo": "maria@restaurante.com",
+    "rol": "cajero",
+    "pinSeguridad": "5678",
+    "activo": true
+  }'
+```
+
+#### 3. Verificar Permisos del Rol Cajero
+```bash
+curl -X GET http://localhost:3000/api/roles/cajero/permisos \
+  -H "Authorization: Bearer <TOKEN_ADMIN>"
+```
+
+#### 4. Ver Registro de Auditoría
+```bash
+curl -X GET "http://localhost:3000/api/autorizaciones?modulo=usuarios" \
+  -H "Authorization: Bearer <TOKEN_ADMIN>"
+```
+
+#### 5. Actualizar Usuario a Gerente
+```bash
+curl -X PUT http://localhost:3000/api/usuarios/<ID_MARIA> \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN_ADMIN>" \
+  -d '{"rol": "gerente"}'
+```
+
+#### 6. Verificar PIN del Usuario
+```bash
+curl -X POST http://localhost:3000/api/usuarios/<ID_MARIA>/verificar-pin \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN_ADMIN>" \
+  -d '{"pin": "5678"}'
+```
+
+---
+
+### Notas Importantes
+
+- **Seguridad del PIN**: Los PINs se almacenan hasheados con bcrypt (salt=10). Nunca se exponen en las respuestas.
+- **Validación de PIN**: Debe ser numérico de 4-6 dígitos (ej: `1234`, `123456`).
+- **Auto-eliminación**: No puedes eliminar tu propio usuario para prevenir bloqueos accidentales.
+- **Auditoría Automática**: Todas las operaciones de usuarios se registran automáticamente en la colección `autorizaciones`.
+- **Admin Legacy**: El rol `admin` tiene acceso completo por compatibilidad con usuarios existentes.
+- **Duplicados**: El correo electrónico debe ser único en el sistema.
+- **Filtros**: Las autorizaciones se pueden filtrar por fecha, acción, módulo, usuario y resultado.
+- **Límite de Resultados**: Por defecto se devuelven las últimas 50 autorizaciones. Puedes especificar hasta 500.
+
+---
+
 ## Roles Disponibles
 
 | Rol | Descripción |

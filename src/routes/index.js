@@ -9,6 +9,9 @@ const mesaRoutes = require('./mesaRoutes');
 const pedidoRoutes = require('./pedidoRoutes');
 const cocinaRoutes = require('./cocinaRoutes');
 const pagoRoutes = require('./pagoRoutes');
+const usuarioRoutes = require('./usuarioRoutes');
+const rolRoutes = require('./rolRoutes');
+const autorizacionRoutes = require('./autorizacionRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -36,6 +39,15 @@ router.use('/cocina', cocinaRoutes);
 
 // Rutas de pagos
 router.use('/pagos', pagoRoutes);
+
+// Rutas de usuarios
+router.use('/usuarios', usuarioRoutes);
+
+// Rutas de roles
+router.use('/roles', rolRoutes);
+
+// Rutas de autorizaciones
+router.use('/autorizaciones', autorizacionRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -109,6 +121,28 @@ router.get('/', (req, res) => {
         procesarPago: 'POST /api/pagos/procesar (requiere token)',
         listarPagos: 'GET /api/pagos (requiere token)',
         obtenerPago: 'GET /api/pagos/:id (requiere token)',
+      },
+      usuarios: {
+        crear: 'POST /api/usuarios (requiere token - permiso GESTIONAR_USUARIOS)',
+        listar: 'GET /api/usuarios (requiere token - permiso GESTIONAR_USUARIOS o VER_TODO)',
+        obtener: 'GET /api/usuarios/:id (requiere token - permiso GESTIONAR_USUARIOS o VER_TODO)',
+        actualizar: 'PUT /api/usuarios/:id (requiere token - permiso GESTIONAR_USUARIOS o EDITAR_TODO)',
+        eliminar: 'DELETE /api/usuarios/:id (requiere token - permiso GESTIONAR_USUARIOS o ELIMINAR_TODO)',
+        verificarPin: 'POST /api/usuarios/:id/verificar-pin (requiere token)',
+      },
+      roles: {
+        listar: 'GET /api/roles (requiere token)',
+        obtener: 'GET /api/roles/:id (requiere token)',
+        obtenerPermisos: 'GET /api/roles/permisos (requiere token)',
+        obtenerPermisosRol: 'GET /api/roles/:id/permisos (requiere token)',
+        verificarPermiso: 'GET /api/roles/:id/verificar-permiso/:permiso (requiere token)',
+      },
+      autorizaciones: {
+        registrar: 'POST /api/autorizaciones (requiere token)',
+        listar: 'GET /api/autorizaciones (requiere token - permiso VER_REPORTES o VER_TODO)',
+        obtener: 'GET /api/autorizaciones/:id (requiere token - permiso VER_REPORTES o VER_TODO)',
+        obtenerPorUsuario: 'GET /api/autorizaciones/usuario/:usuarioId (requiere token - permiso VER_TODO o GESTIONAR_USUARIOS)',
+        estadisticas: 'GET /api/autorizaciones/estadisticas (requiere token - permiso VER_REPORTES o VER_TODO)',
       },
     },
   });
