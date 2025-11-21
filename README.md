@@ -2038,6 +2038,555 @@ Las mesas pueden tener los siguientes estados:
 
 ---
 
+## 🍽️ Gestión de Pedidos
+
+### Flujo de Pedidos
+
+El sistema de pedidos permite a los meseros tomar pedidos de las mesas, agregar items del menú con observaciones específicas, y gestionar el estado del pedido desde su creación hasta su entrega.
+
+### 📝 Crear Pedido
+
+**Endpoint:** `POST /api/pedidos`
+
+**Descripción:** Crea un nuevo pedido para una mesa específica. Al crear el pedido, la mesa cambia automáticamente su estado a "ocupada" si está libre.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "mesaId": "9clzrKWz1eKReUqHL4XP",
+  "items": [
+    {
+      "itemId": "8nKgku3ZZb0LAy4rjGpV",
+      "cantidad": 2,
+      "observaciones": "Sin azúcar"
+    },
+    {
+      "itemId": "xyz789abc123",
+      "cantidad": 1,
+      "observaciones": "Término medio"
+    }
+  ],
+  "observaciones": "Cliente prefiere servicio rápido"
+}
+```
+
+**Campos:**
+- `mesaId` (string, requerido): ID de la mesa donde se realiza el pedido
+- `items` (array, requerido): Lista de items del pedido (mínimo 1)
+  - `itemId` (string, requerido): ID del item del menú
+  - `cantidad` (number, requerido): Cantidad del item (mínimo 1)
+  - `observaciones` (string, opcional): Observaciones específicas del item (máx. 200 caracteres)
+- `observaciones` (string, opcional): Observaciones generales del pedido (máx. 500 caracteres)
+
+**Proceso automático:**
+1. Verifica que la mesa existe y está activa
+2. Valida que todos los items existen y están disponibles
+3. Calcula subtotal, impuestos y total automáticamente
+4. Asigna el mesero que creó el pedido
+5. Cambia el estado de la mesa a "ocupada" si está libre
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido creado exitosamente",
+  "datos": {
+    "id": "pedido123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [
+      {
+        "itemId": "8nKgku3ZZb0LAy4rjGpV",
+        "nombre": "Café Americano",
+        "descripcion": "Café americano preparado con granos seleccionados",
+        "categoria": "Bebidas",
+        "precioUnitario": 35,
+        "cantidad": 2,
+        "observaciones": "Sin azúcar",
+        "subtotal": 70
+      }
+    ],
+    "observaciones": "Cliente prefiere servicio rápido",
+    "subtotal": 70,
+    "impuestos": 11.2,
+    "total": 81.2,
+    "estado": "pendiente",
+    "meseroId": "9lKe5hLK5bHOMO59KGkc",
+    "meseroNombre": "Juan Pérez",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Campos faltantes o inválidos, items no disponibles
+- `404`: Mesa no encontrada o item no encontrado
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/pedidos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "items": [
+      {
+        "itemId": "8nKgku3ZZb0LAy4rjGpV",
+        "cantidad": 2,
+        "observaciones": "Sin azúcar"
+      }
+    ],
+    "observaciones": "Cliente prefiere servicio rápido"
+  }'
+```
+
+---
+
+### 📋 Listar Pedidos
+
+**Endpoint:** `GET /api/pedidos`
+
+**Descripción:** Obtiene la lista de pedidos activos con opciones de filtrado por estado, mesa o fecha.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `estado`: Filtrar por estado del pedido
+  - Valores: `pendiente`, `en_preparacion`, `listo`, `entregado`, `cancelado`
+- `mesaId`: Filtrar por ID de mesa específica
+- `fecha`: Filtrar por fecha específica (formato: YYYY-MM-DD)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "pedidos": [
+      {
+        "id": "pedido123abc",
+        "mesaId": "9clzrKWz1eKReUqHL4XP",
+        "numeroMesa": "Mesa 11",
+        "items": [...],
+        "observaciones": "Cliente prefiere servicio rápido",
+        "subtotal": 70,
+        "impuestos": 11.2,
+        "total": 81.2,
+        "estado": "pendiente",
+        "meseroId": "9lKe5hLK5bHOMO59KGkc",
+        "meseroNombre": "Juan Pérez",
+        "creadoEn": "2025-11-20T10:30:00.000Z",
+        "actualizadoEn": "2025-11-20T10:30:00.000Z",
+        "activo": true
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+**Ejemplos de filtrado:**
+
+**Todos los pedidos:**
+```bash
+curl -X GET http://localhost:3000/api/pedidos \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo pedidos pendientes:**
+```bash
+curl -X GET "http://localhost:3000/api/pedidos?estado=pendiente" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Pedidos de una mesa específica:**
+```bash
+curl -X GET "http://localhost:3000/api/pedidos?mesaId=9clzrKWz1eKReUqHL4XP" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Pedidos de una fecha específica:**
+```bash
+curl -X GET "http://localhost:3000/api/pedidos?fecha=2025-11-20" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Errores posibles:**
+- `400`: Estado inválido
+- `401`: No autenticado
+- `500`: Error del servidor
+
+---
+
+### 🔍 Obtener Pedido por ID
+
+**Endpoint:** `GET /api/pedidos/:id`
+
+**Descripción:** Obtiene los detalles completos de un pedido específico.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "pedido123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "observaciones": "Cliente prefiere servicio rápido",
+    "subtotal": 70,
+    "impuestos": 11.2,
+    "total": 81.2,
+    "estado": "pendiente",
+    "meseroId": "9lKe5hLK5bHOMO59KGkc",
+    "meseroNombre": "Juan Pérez",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/pedidos/pedido123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✏️ Actualizar Pedido
+
+**Endpoint:** `PUT /api/pedidos/:id`
+
+**Descripción:** Actualiza los items o observaciones de un pedido. **Solo se pueden modificar pedidos en estado "pendiente"**.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "items": [
+    {
+      "itemId": "8nKgku3ZZb0LAy4rjGpV",
+      "cantidad": 3,
+      "observaciones": "Sin azúcar, con hielo"
+    }
+  ],
+  "observaciones": "Cliente tiene prisa"
+}
+```
+
+**Campos:**
+- `items` (array, opcional): Nueva lista completa de items
+- `observaciones` (string, opcional): Nuevas observaciones generales
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido actualizado exitosamente",
+  "datos": {
+    "id": "pedido123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "observaciones": "Cliente tiene prisa",
+    "subtotal": 105,
+    "impuestos": 16.8,
+    "total": 121.8,
+    "estado": "pendiente",
+    "meseroId": "9lKe5hLK5bHOMO59KGkc",
+    "meseroNombre": "Juan Pérez",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:35:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos, pedido no está en estado pendiente
+- `404`: Pedido no encontrado o item no encontrado
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/pedidos/pedido123abc \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "items": [
+      {
+        "itemId": "8nKgku3ZZb0LAy4rjGpV",
+        "cantidad": 3,
+        "observaciones": "Sin azúcar, con hielo"
+      }
+    ],
+    "observaciones": "Cliente tiene prisa"
+  }'
+```
+
+---
+
+### 🔄 Cambiar Estado del Pedido
+
+**Endpoint:** `PATCH /api/pedidos/:id/estado`
+
+**Descripción:** Cambia el estado del pedido siguiendo el flujo de trabajo definido. Cuando un pedido se entrega o cancela, si no hay más pedidos activos en la mesa, ésta cambia automáticamente a "en_limpieza".
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Body:**
+```json
+{
+  "estado": "en_preparacion"
+}
+```
+
+**Campos:**
+- `estado` (string, requerido): Nuevo estado del pedido
+  - Valores: `pendiente`, `en_preparacion`, `listo`, `entregado`, `cancelado`
+
+**Transiciones válidas:**
+- `pendiente` → `en_preparacion` o `cancelado`
+- `en_preparacion` → `listo` o `cancelado`
+- `listo` → `entregado` o `cancelado`
+- `entregado` → (estado final, no se puede cambiar)
+- `cancelado` → (estado final, no se puede cambiar)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Estado del pedido actualizado exitosamente",
+  "datos": {
+    "id": "pedido123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "items": [...],
+    "observaciones": "Cliente prefiere servicio rápido",
+    "subtotal": 70,
+    "impuestos": 11.2,
+    "total": 81.2,
+    "estado": "en_preparacion",
+    "meseroId": "9lKe5hLK5bHOMO59KGkc",
+    "meseroNombre": "Juan Pérez",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:35:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Estado inválido o transición no permitida
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplos con cURL:**
+
+**Enviar a cocina:**
+```bash
+curl -X PATCH http://localhost:3000/api/pedidos/pedido123abc/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "en_preparacion"}'
+```
+
+**Marcar como listo:**
+```bash
+curl -X PATCH http://localhost:3000/api/pedidos/pedido123abc/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "listo"}'
+```
+
+**Entregar pedido:**
+```bash
+curl -X PATCH http://localhost:3000/api/pedidos/pedido123abc/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "entregado"}'
+```
+
+---
+
+### ❌ Cancelar Pedido
+
+**Endpoint:** `PATCH /api/pedidos/:id/cancelar`
+
+**Descripción:** Cancela un pedido que no ha sido entregado. Si no hay más pedidos activos en la mesa, ésta cambia automáticamente a "libre".
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido cancelado exitosamente"
+}
+```
+
+**Errores posibles:**
+- `400`: Pedido ya entregado o ya cancelado
+- `404`: Pedido no encontrado
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PATCH http://localhost:3000/api/pedidos/pedido123abc/cancelar \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🗑️ Eliminar Pedido
+
+**Endpoint:** `DELETE /api/pedidos/:id`
+
+**Descripción:** Realiza una eliminación lógica del pedido (marca como inactivo). Solo admin y gerente pueden eliminar pedidos.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pedido
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pedido eliminado exitosamente"
+}
+```
+
+**Errores posibles:**
+- `403`: Sin permisos (no es admin ni gerente)
+- `404`: Pedido no encontrado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X DELETE http://localhost:3000/api/pedidos/pedido123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 📊 Estados de Pedido
+
+Los pedidos siguen un flujo de estados bien definido:
+
+| Estado | Descripción | Color sugerido | Siguiente estado posible |
+|--------|-------------|----------------|-------------------------|
+| `pendiente` | Pedido creado, esperando envío a cocina | 🟡 Amarillo | en_preparacion, cancelado |
+| `en_preparacion` | Pedido en cocina | 🟠 Naranja | listo, cancelado |
+| `listo` | Pedido terminado, listo para servir | 🔵 Azul | entregado, cancelado |
+| `entregado` | Pedido entregado al cliente | 🟢 Verde | (final) |
+| `cancelado` | Pedido cancelado | 🔴 Rojo | (final) |
+
+### 🔄 Flujo de Trabajo Recomendado para Pedidos
+
+1. **Tomar pedido:**
+   - Mesero selecciona mesa libre o reservada
+   - Agrega items del menú con cantidades y observaciones
+   - Agrega observaciones generales del pedido
+   - Crea el pedido: `POST /api/pedidos`
+   - La mesa cambia automáticamente a "ocupada"
+
+2. **Enviar a cocina:**
+   - Cambiar estado: `PATCH /api/pedidos/:id/estado` → `en_preparacion`
+   - La cocina ve los pedidos con este estado
+
+3. **Preparación:**
+   - Cocina prepara los items
+   - Al terminar: `PATCH /api/pedidos/:id/estado` → `listo`
+
+4. **Servir:**
+   - Mesero entrega el pedido
+   - Cambiar estado: `PATCH /api/pedidos/:id/estado` → `entregado`
+   - Si no hay más pedidos activos, la mesa cambia a "en_limpieza"
+
+5. **Casos especiales:**
+   - **Modificar pedido:** Solo mientras está `pendiente` con `PUT /api/pedidos/:id`
+   - **Cancelar:** En cualquier momento antes de entregar con `PATCH /api/pedidos/:id/cancelar`
+
+### 💡 Notas Importantes sobre Pedidos
+
+- Los totales (subtotal, impuestos, total) se calculan automáticamente según los precios actuales de los items
+- El porcentaje de impuestos se toma de la configuración del restaurante
+- Solo se pueden modificar pedidos en estado "pendiente"
+- Al crear un pedido, se valida que todos los items estén disponibles
+- El sistema registra automáticamente quién tomó el pedido (meseroId y meseroNombre)
+- Las mesas se gestionan automáticamente según el estado de los pedidos
+
+---
+
 ## Roles Disponibles
 
 | Rol | Descripción |
