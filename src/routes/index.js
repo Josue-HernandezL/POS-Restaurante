@@ -12,6 +12,7 @@ const pagoRoutes = require('./pagoRoutes');
 const usuarioRoutes = require('./usuarioRoutes');
 const rolRoutes = require('./rolRoutes');
 const autorizacionRoutes = require('./autorizacionRoutes');
+const dashboardRoutes = require('./dashboardRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -48,6 +49,9 @@ router.use('/roles', rolRoutes);
 
 // Rutas de autorizaciones
 router.use('/autorizaciones', autorizacionRoutes);
+
+// Rutas de dashboard
+router.use('/dashboard', dashboardRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -143,6 +147,14 @@ router.get('/', (req, res) => {
         obtener: 'GET /api/autorizaciones/:id (requiere token - permiso VER_REPORTES o VER_TODO)',
         obtenerPorUsuario: 'GET /api/autorizaciones/usuario/:usuarioId (requiere token - permiso VER_TODO o GESTIONAR_USUARIOS)',
         estadisticas: 'GET /api/autorizaciones/estadisticas (requiere token - permiso VER_REPORTES o VER_TODO)',
+      },
+      dashboard: {
+        resumenCompleto: 'GET /api/dashboard/resumen (requiere token - permiso VER_REPORTES o VER_TODO)',
+        metricas: 'GET /api/dashboard/metricas (requiere token - permiso VER_REPORTES o VER_TODO)',
+        ventasPorCategoria: 'GET /api/dashboard/ventas-por-categoria (requiere token - permiso VER_REPORTES o VER_TODO)',
+        productosMasVendidos: 'GET /api/dashboard/productos-mas-vendidos (requiere token - permiso VER_REPORTES o VER_TODO)',
+        ordenesRecientes: 'GET /api/dashboard/ordenes-recientes (requiere token - permiso VER_REPORTES o VER_TODO)',
+        itemsMenu: 'GET /api/dashboard/items-menu (requiere token - permiso VER_REPORTES o VER_TODO)',
       },
     },
   });

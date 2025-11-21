@@ -3702,6 +3702,419 @@ Cada persona puede pagar su parte, pero el sistema registra un solo pago total d
 
 ---
 
+## Módulo: Dashboard y Estadísticas
+
+Este módulo proporciona métricas en tiempo real y estadísticas del sistema, diseñado para ofrecer una visión completa del rendimiento del restaurante. Incluye todas las métricas necesarias para el panel de control principal.
+
+### Características del Dashboard
+
+- 📊 **Métricas Principales**: Ingresos totales, órdenes completadas, ticket promedio, reservaciones
+- 📈 **Análisis de Ventas**: Ventas por categoría con gráficos y porcentajes
+- 🏆 **Productos Más Vendidos**: Top 5 productos con cantidades y totales
+- 🕐 **Órdenes Recientes**: Historial en tiempo real de las últimas órdenes
+- 📉 **Comparativas**: Porcentaje de cambio respecto al mes anterior
+- 🔍 **Filtros por Fecha**: Consultar métricas de cualquier período
+
+### Endpoints Disponibles
+
+| Método | Endpoint | Descripción | Permisos Requeridos |
+|--------|----------|-------------|---------------------|
+| GET | `/api/dashboard/resumen` | Resumen completo con todas las métricas | `ver_reportes` o `ver_todo` |
+| GET | `/api/dashboard/metricas` | Métricas principales del dashboard | `ver_reportes` o `ver_todo` |
+| GET | `/api/dashboard/ventas-por-categoria` | Ventas agrupadas por categoría | `ver_reportes` o `ver_todo` |
+| GET | `/api/dashboard/productos-mas-vendidos` | Top productos más vendidos | `ver_reportes` o `ver_todo` |
+| GET | `/api/dashboard/ordenes-recientes` | Órdenes más recientes | `ver_reportes` o `ver_todo` |
+| GET | `/api/dashboard/items-menu` | Total de items activos en el menú | `ver_reportes` o `ver_todo` |
+
+---
+
+### Obtener Resumen Completo del Dashboard
+
+Endpoint principal que retorna todas las métricas, ventas por categoría, productos más vendidos y órdenes recientes en una sola petición.
+
+```bash
+# Resumen del día actual
+curl -X GET http://localhost:3000/api/dashboard/resumen \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Resumen de un período específico
+curl -X GET "http://localhost:3000/api/dashboard/resumen?fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "metricas": {
+    "ingresosTotales": 15250.50,
+    "porcentajeCambioIngresos": 12.5,
+    "totalOrdenes": 85,
+    "ordenesCompletadas": 85,
+    "ticketPromedio": 179.42,
+    "reservaciones": 12,
+    "ordenesPendientes": 3,
+    "ordenesEnPreparacion": 5,
+    "propinaPromedio": 25.50,
+    "propinaPorcentaje": 14.2,
+    "periodo": {
+      "inicio": "2024-01-01T00:00:00.000Z",
+      "fin": "2024-01-31T23:59:59.999Z"
+    },
+    "itemsEnMenu": 45
+  },
+  "ventasPorCategoria": [
+    {
+      "categoria": "Platos Principales",
+      "total": 8500.00,
+      "cantidad": 120,
+      "porcentaje": 55.74
+    },
+    {
+      "categoria": "Bebidas",
+      "total": 3200.00,
+      "cantidad": 200,
+      "porcentaje": 20.98
+    }
+  ],
+  "productosMasVendidos": [
+    {
+      "itemId": "item123",
+      "nombre": "Hamburguesa Clásica",
+      "categoria": "Platos Principales",
+      "cantidadVendida": 45,
+      "totalVentas": 4500.00
+    },
+    {
+      "itemId": "item456",
+      "nombre": "Pizza Margherita",
+      "categoria": "Platos Principales",
+      "cantidadVendida": 38,
+      "totalVentas": 3800.00
+    }
+  ],
+  "ordenesRecientes": [
+    {
+      "id": "orden123",
+      "mesaId": "mesa1",
+      "mesaNumero": 5,
+      "estado": "completado",
+      "total": 250.00,
+      "totalItems": 3,
+      "creadoEn": "2024-01-31T20:15:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Obtener Métricas Principales
+
+Retorna las métricas principales del dashboard: ingresos, órdenes, ticket promedio, etc.
+
+```bash
+# Métricas del día actual
+curl -X GET http://localhost:3000/api/dashboard/metricas \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Métricas de un período específico
+curl -X GET "http://localhost:3000/api/dashboard/metricas?fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Parámetros de consulta**:
+- `fechaInicio` (opcional): Fecha inicial en formato ISO 8601
+- `fechaFin` (opcional): Fecha final en formato ISO 8601
+
+**Respuesta exitosa** (200):
+```json
+{
+  "metricas": {
+    "ingresosTotales": 15250.50,
+    "porcentajeCambioIngresos": 12.5,
+    "totalOrdenes": 85,
+    "ordenesCompletadas": 85,
+    "ticketPromedio": 179.42,
+    "reservaciones": 12,
+    "ordenesPendientes": 3,
+    "ordenesEnPreparacion": 5,
+    "propinaPromedio": 25.50,
+    "propinaPorcentaje": 14.2,
+    "periodo": {
+      "inicio": "2024-01-01T00:00:00.000Z",
+      "fin": "2024-01-31T23:59:59.999Z"
+    }
+  }
+}
+```
+
+**Descripción de las métricas**:
+- `ingresosTotales`: Suma total de pagos completados en el período
+- `porcentajeCambioIngresos`: Variación porcentual respecto al mes anterior
+- `totalOrdenes`: Total de órdenes completadas
+- `ticketPromedio`: Promedio de venta por orden
+- `reservaciones`: Total de reservaciones confirmadas
+- `ordenesPendientes`: Órdenes en estado pendiente
+- `ordenesEnPreparacion`: Órdenes en estado en_preparacion
+- `propinaPromedio`: Promedio de propina por orden
+- `propinaPorcentaje`: Propina como porcentaje de los ingresos totales
+
+---
+
+### Obtener Ventas por Categoría
+
+Retorna las ventas agrupadas por categoría de productos, con totales, cantidades y porcentajes.
+
+```bash
+# Ventas por categoría del día actual
+curl -X GET http://localhost:3000/api/dashboard/ventas-por-categoria \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Ventas por categoría de un período
+curl -X GET "http://localhost:3000/api/dashboard/ventas-por-categoria?fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "ventasPorCategoria": [
+    {
+      "categoria": "Platos Principales",
+      "total": 8500.00,
+      "cantidad": 120,
+      "porcentaje": 55.74
+    },
+    {
+      "categoria": "Bebidas",
+      "total": 3200.00,
+      "cantidad": 200,
+      "porcentaje": 20.98
+    },
+    {
+      "categoria": "Entradas",
+      "total": 2100.00,
+      "cantidad": 85,
+      "porcentaje": 13.77
+    },
+    {
+      "categoria": "Postres",
+      "total": 1450.50,
+      "cantidad": 60,
+      "porcentaje": 9.51
+    }
+  ],
+  "total": 4
+}
+```
+
+**Nota**: Los resultados están ordenados por total de ventas (descendente).
+
+---
+
+### Obtener Productos Más Vendidos
+
+Retorna el top de productos con mejor desempeño en ventas.
+
+```bash
+# Top 5 productos del día
+curl -X GET http://localhost:3000/api/dashboard/productos-mas-vendidos \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Top 10 productos de un período
+curl -X GET "http://localhost:3000/api/dashboard/productos-mas-vendidos?limite=10&fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Parámetros de consulta**:
+- `limite` (opcional): Cantidad de productos a retornar (1-50, default: 5)
+- `fechaInicio` (opcional): Fecha inicial en formato ISO 8601
+- `fechaFin` (opcional): Fecha final en formato ISO 8601
+
+**Respuesta exitosa** (200):
+```json
+{
+  "productosMasVendidos": [
+    {
+      "itemId": "item123",
+      "nombre": "Hamburguesa Clásica",
+      "categoria": "Platos Principales",
+      "cantidadVendida": 45,
+      "totalVentas": 4500.00
+    },
+    {
+      "itemId": "item456",
+      "nombre": "Pizza Margherita",
+      "categoria": "Platos Principales",
+      "cantidadVendida": 38,
+      "totalVentas": 3800.00
+    },
+    {
+      "itemId": "item789",
+      "nombre": "Ensalada César",
+      "categoria": "Entradas",
+      "cantidadVendida": 32,
+      "totalVentas": 1600.00
+    }
+  ],
+  "total": 3
+}
+```
+
+---
+
+### Obtener Órdenes Recientes
+
+Retorna las órdenes más recientes del sistema.
+
+```bash
+# Últimas 10 órdenes
+curl -X GET http://localhost:3000/api/dashboard/ordenes-recientes \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Últimas 20 órdenes
+curl -X GET "http://localhost:3000/api/dashboard/ordenes-recientes?limite=20" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Parámetros de consulta**:
+- `limite` (opcional): Cantidad de órdenes a retornar (1-50, default: 10)
+
+**Respuesta exitosa** (200):
+```json
+{
+  "ordenesRecientes": [
+    {
+      "id": "orden123",
+      "mesaId": "mesa1",
+      "mesaNumero": 5,
+      "estado": "completado",
+      "total": 250.00,
+      "totalItems": 3,
+      "items": [
+        {
+          "itemId": "item1",
+          "nombre": "Hamburguesa",
+          "cantidad": 2,
+          "precio": 100.00
+        }
+      ],
+      "creadoEn": "2024-01-31T20:15:00.000Z",
+      "actualizadoEn": "2024-01-31T20:45:00.000Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+### Obtener Total de Items en el Menú
+
+Retorna la cantidad de items activos en el menú.
+
+```bash
+curl -X GET http://localhost:3000/api/dashboard/items-menu \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Respuesta exitosa** (200):
+```json
+{
+  "itemsEnMenu": 45
+}
+```
+
+---
+
+### Casos de Uso del Dashboard
+
+#### 1. Vista Principal del Dashboard (como la imagen)
+
+```javascript
+// Frontend: Obtener resumen completo al cargar el dashboard
+const cargarDashboard = async () => {
+  const response = await fetch('/api/dashboard/resumen', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  
+  // Renderizar métricas principales
+  mostrarIngresosTotales(data.metricas.ingresosTotales);
+  mostrarTotalOrdenes(data.metricas.totalOrdenes);
+  mostrarTicketPromedio(data.metricas.ticketPromedio);
+  mostrarReservaciones(data.metricas.reservaciones);
+  
+  // Renderizar gráficos
+  renderizarGraficoVentasPorCategoria(data.ventasPorCategoria);
+  renderizarTopProductos(data.productosMasVendidos);
+  renderizarOrdenesRecientes(data.ordenesRecientes);
+};
+```
+
+#### 2. Filtrar Dashboard por Período
+
+```bash
+# Estadísticas del mes actual
+curl -X GET "http://localhost:3000/api/dashboard/resumen?fechaInicio=2024-01-01T00:00:00.000Z&fechaFin=2024-01-31T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Estadísticas de la semana pasada
+curl -X GET "http://localhost:3000/api/dashboard/resumen?fechaInicio=2024-01-15T00:00:00.000Z&fechaFin=2024-01-21T23:59:59.999Z" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+#### 3. Actualizar Dashboard en Tiempo Real
+
+```javascript
+// Actualizar métricas cada 30 segundos
+setInterval(async () => {
+  const response = await fetch('/api/dashboard/metricas', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const { metricas } = await response.json();
+  actualizarMetricas(metricas);
+}, 30000);
+```
+
+---
+
+### Requisitos de Firestore
+
+Para que el módulo de dashboard funcione correctamente, necesitas crear los siguientes **índices compuestos** en Firestore:
+
+#### Índices Requeridos:
+
+1. **Colección: `ordenes`**
+   - Campos: `estado` (Ascending) + `creadoEn` (Ascending)
+
+2. **Colección: `pagos`**
+   - Campos: `fechaPago` (Ascending) + `estado` (Ascending)
+
+3. **Colección: `reservaciones`**
+   - Campos: `fechaHora` (Ascending) + `estado` (Ascending)
+
+**Archivo de configuración**: Se incluye `firestore.indexes.json` en la raíz del proyecto para desplegar automáticamente:
+
+```bash
+firebase deploy --only firestore:indexes
+```
+
+---
+
+### Notas Importantes sobre el Dashboard
+
+- 📅 **Período por defecto**: Si no se especifican fechas, se muestran las métricas del día actual
+- 🔄 **Datos en tiempo real**: Las métricas se calculan dinámicamente desde Firestore
+- 📊 **Órdenes completadas**: Solo se cuentan órdenes con estado `completado` para los cálculos
+- 💰 **Ingresos**: Basados en pagos con estado `completado`
+- 📈 **Comparativa mensual**: El porcentaje de cambio compara con el mismo período del mes anterior
+- 🎯 **Filtros flexibles**: Todos los endpoints admiten filtros por rango de fechas
+- ⚡ **Performance**: Los índices compuestos son necesarios para consultas rápidas
+- 🔐 **Permisos**: Solo usuarios con `ver_reportes` o `ver_todo` pueden acceder
+
+---
+
 ## Módulo: Usuarios, Roles y Permisos
 
 Este módulo implementa un sistema completo de gestión de usuarios con control de acceso basado en roles (RBAC) y registro de auditoría. El módulo está compuesto por tres componentes principales:
