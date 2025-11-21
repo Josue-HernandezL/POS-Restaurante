@@ -1591,6 +1591,453 @@ La configuración del sistema se organiza en cuatro secciones principales:
 
 ---
 
+## 🪑 Gestión de Mesas
+
+### Inicialización de Mesas
+
+Las mesas se crean automáticamente basándose en el número configurado en la configuración del restaurante. **No es necesario crear mesas individualmente**, el sistema las genera todas en un solo paso.
+
+### 🔧 Inicializar Mesas
+
+**Endpoint:** `POST /api/mesas/inicializar`
+
+**Descripción:** Crea automáticamente todas las mesas según el `numeroMesas` configurado en `/api/configuracion/restaurante`. Las mesas se crean con valores predeterminados que luego pueden editarse individualmente.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Proceso de inicialización:**
+1. Lee el `numeroMesas` de la configuración del restaurante
+2. Verifica cuántas mesas activas ya existen
+3. Crea las mesas faltantes con estos valores por defecto:
+   - **Número:** "Mesa 1", "Mesa 2", "Mesa 3", etc.
+   - **Capacidad:** 4 personas
+   - **Sección:** "Sin asignar"
+   - **Estado:** "libre"
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Se crearon 20 mesas exitosamente",
+  "datos": {
+    "mesasCreadas": 20,
+    "totalMesas": 20,
+    "mesas": [
+      {
+        "id": "uueVavsgIK79DybMLdW4",
+        "numeroMesa": "Mesa 1",
+        "capacidad": 4,
+        "seccion": "Sin asignar",
+        "estado": "libre",
+        "creadoEn": "2025-11-20T10:30:00.000Z",
+        "actualizadoEn": "2025-11-20T10:30:00.000Z",
+        "activo": true
+      },
+      {
+        "id": "xyz789abc123def456",
+        "numeroMesa": "Mesa 2",
+        "capacidad": 4,
+        "seccion": "Sin asignar",
+        "estado": "libre",
+        "creadoEn": "2025-11-20T10:30:01.000Z",
+        "actualizadoEn": "2025-11-20T10:30:01.000Z",
+        "activo": true
+      }
+      // ... resto de las mesas
+    ]
+  }
+}
+```
+
+**Si ya existen todas las mesas (400):**
+```json
+{
+  "exito": false,
+  "error": "Ya existen todas las mesas configuradas (20)"
+}
+```
+
+**Errores posibles:**
+- `400`: Ya existen todas las mesas o número de mesas es 0
+- `403`: Sin permisos (no es admin ni gerente)
+- `404`: No existe configuración del restaurante
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/mesas/inicializar \
+  -H "Authorization: Bearer {token}"
+```
+
+**Notas importantes:** 
+- ⚠️ **Primero debes configurar** el `numeroMesas` en `/api/configuracion/restaurante`
+- Este endpoint solo crea mesas nuevas, **no elimina las existentes**
+- Si ya tienes 10 mesas y configuras 20, solo creará las 10 faltantes
+- Después de inicializar, edita cada mesa para asignar capacidad y sección específicas
+
+---
+
+### 📋 Listar Mesas
+
+**Endpoint:** `GET /api/mesas`
+
+**Descripción:** Obtiene la lista de todas las mesas activas del restaurante, con opción de filtrar por estado.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `estado`: Filtrar por estado de la mesa
+  - Valores: `libre`, `ocupada`, `reservada`, `en_limpieza`
+  - Si no se especifica, devuelve todas las mesas
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "mesas": [
+      {
+        "id": "uueVavsgIK79DybMLdW4",
+        "numeroMesa": "Mesa 1",
+        "capacidad": 4,
+        "seccion": "Salon Principal",
+        "estado": "libre",
+        "creadoEn": "2025-11-20T10:30:00.000Z",
+        "actualizadoEn": "2025-11-20T10:30:00.000Z",
+        "activo": true
+      },
+      {
+        "id": "xyz789abc123def456",
+        "numeroMesa": "Mesa 2",
+        "capacidad": 6,
+        "seccion": "Terraza",
+        "estado": "ocupada",
+        "creadoEn": "2025-11-20T10:35:00.000Z",
+        "actualizadoEn": "2025-11-20T14:20:00.000Z",
+        "activo": true
+      }
+    ],
+    "total": 2
+  }
+}
+```
+
+**Ejemplos de filtrado:**
+
+**Todas las mesas:**
+```bash
+curl -X GET http://localhost:3000/api/mesas \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo mesas libres:**
+```bash
+curl -X GET "http://localhost:3000/api/mesas?estado=libre" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo mesas ocupadas:**
+```bash
+curl -X GET "http://localhost:3000/api/mesas?estado=ocupada" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo mesas reservadas:**
+```bash
+curl -X GET "http://localhost:3000/api/mesas?estado=reservada" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Solo mesas en limpieza:**
+```bash
+curl -X GET "http://localhost:3000/api/mesas?estado=en_limpieza" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Errores posibles:**
+- `400`: Estado inválido
+- `401`: No autenticado
+- `500`: Error del servidor
+
+---
+
+### 🔍 Obtener Mesa por ID
+
+**Endpoint:** `GET /api/mesas/:id`
+
+**Descripción:** Obtiene los detalles de una mesa específica.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID de la mesa
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "uueVavsgIK79DybMLdW4",
+    "numeroMesa": "Mesa 1",
+    "capacidad": 4,
+    "seccion": "Salon Principal",
+    "estado": "libre",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T10:30:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Mesa no encontrada
+- `401`: No autenticado
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4 \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✏️ Actualizar Mesa
+
+**Endpoint:** `PUT /api/mesas/:id`
+
+**Descripción:** Actualiza los datos de una mesa existente. Permite modificar capacidad, sección y estado.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID de la mesa
+
+**Body (todos los campos son opcionales):**
+```json
+{
+  "capacidad": 6,
+  "seccion": "Terraza",
+  "estado": "ocupada"
+}
+```
+
+**Campos:**
+- `capacidad` (number, opcional): Número de personas que puede acomodar (1-20)
+- `seccion` (string, opcional): Sección donde se encuentra la mesa (3-100 caracteres)
+- `estado` (string, opcional): Estado de la mesa
+  - Valores: `libre`, `ocupada`, `reservada`, `en_limpieza`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Mesa actualizada exitosamente",
+  "datos": {
+    "id": "uueVavsgIK79DybMLdW4",
+    "numeroMesa": "Mesa 1",
+    "capacidad": 6,
+    "seccion": "Terraza",
+    "estado": "ocupada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T14:20:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos
+- `403`: Sin permisos (no es admin ni gerente)
+- `404`: Mesa no encontrada
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X PUT http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "capacidad": 6,
+    "seccion": "Terraza",
+    "estado": "ocupada"
+  }'
+```
+
+---
+
+### 🔄 Cambiar Estado de Mesa
+
+**Endpoint:** `PATCH /api/mesas/:id/estado`
+
+**Descripción:** Endpoint específico para cambiar solo el estado de una mesa de forma rápida. Útil para actualizar el estado sin enviar otros datos.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID de la mesa
+
+**Body:**
+```json
+{
+  "estado": "ocupada"
+}
+```
+
+**Campos:**
+- `estado` (string, requerido): Nuevo estado de la mesa
+  - Valores: `libre`, `ocupada`, `reservada`, `en_limpieza`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Estado de la mesa actualizado exitosamente",
+  "datos": {
+    "id": "uueVavsgIK79DybMLdW4",
+    "numeroMesa": "Mesa 1",
+    "capacidad": 4,
+    "seccion": "Salon Principal",
+    "estado": "ocupada",
+    "creadoEn": "2025-11-20T10:30:00.000Z",
+    "actualizadoEn": "2025-11-20T14:25:00.000Z",
+    "activo": true
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Estado inválido
+- `401`: No autenticado
+- `404`: Mesa no encontrada
+- `500`: Error del servidor
+
+**Ejemplos con cURL:**
+
+**Marcar mesa como ocupada:**
+```bash
+curl -X PATCH http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "ocupada"}'
+```
+
+**Marcar mesa como libre:**
+```bash
+curl -X PATCH http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "libre"}'
+```
+
+**Marcar mesa en limpieza:**
+```bash
+curl -X PATCH http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4/estado \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"estado": "en_limpieza"}'
+```
+
+---
+
+### 🗑️ Eliminar Mesa
+
+**Endpoint:** `DELETE /api/mesas/:id`
+
+**Descripción:** Realiza una eliminación lógica de la mesa (marca como inactiva). La mesa no se elimina físicamente de la base de datos.
+
+**Autenticación:** Requerida (admin o gerente)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID de la mesa
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Mesa eliminada exitosamente"
+}
+```
+
+**Errores posibles:**
+- `403`: Sin permisos (no es admin ni gerente)
+- `404`: Mesa no encontrada
+- `500`: Error del servidor
+
+**Ejemplo con cURL:**
+```bash
+curl -X DELETE http://localhost:3000/api/mesas/uueVavsgIK79DybMLdW4 \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 📊 Estados de Mesa
+
+Las mesas pueden tener los siguientes estados:
+
+| Estado | Descripción | Color sugerido |
+|--------|-------------|----------------|
+| `libre` | Mesa disponible para asignar | 🟢 Verde |
+| `ocupada` | Mesa con clientes actualmente | 🔴 Rojo |
+| `reservada` | Mesa reservada para una hora específica | 🟡 Amarillo |
+| `en_limpieza` | Mesa en proceso de limpieza | 🔵 Azul |
+
+### 🔄 Flujo de Trabajo Recomendado
+
+1. **Configuración inicial:**
+   - Configura el `numeroMesas` en `/api/configuracion/restaurante`
+   - Ejecuta `POST /api/mesas/inicializar` para crear todas las mesas
+
+2. **Personalización:**
+   - Edita cada mesa con `PUT /api/mesas/:id` para asignar:
+     - Capacidad específica (2, 4, 6, 8 personas, etc.)
+     - Sección ("Terraza", "Salon Principal", "VIP", etc.)
+
+3. **Operación diaria:**
+   - Los meseros consultan mesas libres: `GET /api/mesas?estado=libre`
+   - Al asignar clientes: `PATCH /api/mesas/:id/estado` → `ocupada`
+   - Al terminar: `PATCH /api/mesas/:id/estado` → `en_limpieza`
+   - Después de limpiar: `PATCH /api/mesas/:id/estado` → `libre`
+
+4. **Gestión de reservaciones:**
+   - Al confirmar reserva: `PATCH /api/mesas/:id/estado` → `reservada`
+   - Al llegar el cliente: `PATCH /api/mesas/:id/estado` → `ocupada`
+
+---
+
 ## Roles Disponibles
 
 | Rol | Descripción |

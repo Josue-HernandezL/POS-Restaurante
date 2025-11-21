@@ -5,6 +5,7 @@ const categoriaRoutes = require('./categoriaRoutes');
 const itemMenuRoutes = require('./itemMenuRoutes');
 const reservacionRoutes = require('./reservacionRoutes');
 const configuracionRoutes = require('./configuracionRoutes');
+const mesaRoutes = require('./mesaRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -20,6 +21,9 @@ router.use('/reservaciones', reservacionRoutes);
 
 // Rutas de configuración
 router.use('/configuracion', configuracionRoutes);
+
+// Rutas de mesas
+router.use('/mesas', mesaRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -61,6 +65,14 @@ router.get('/', (req, res) => {
         actualizarNotificaciones: 'PUT /api/configuracion/notificaciones (requiere token - admin/gerente)',
         actualizarImpuestos: 'PUT /api/configuracion/impuestos (requiere token - admin/gerente)',
         actualizarPropinas: 'PUT /api/configuracion/propinas (requiere token - admin/gerente)',
+      },
+      mesas: {
+        inicializar: 'POST /api/mesas/inicializar (requiere token - admin/gerente)',
+        listar: 'GET /api/mesas (requiere token)',
+        obtener: 'GET /api/mesas/:id (requiere token)',
+        actualizar: 'PUT /api/mesas/:id (requiere token - admin/gerente)',
+        cambiarEstado: 'PATCH /api/mesas/:id/estado (requiere token)',
+        eliminar: 'DELETE /api/mesas/:id (requiere token - admin/gerente)',
       },
     },
   });
