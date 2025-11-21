@@ -8,6 +8,7 @@ const configuracionRoutes = require('./configuracionRoutes');
 const mesaRoutes = require('./mesaRoutes');
 const pedidoRoutes = require('./pedidoRoutes');
 const cocinaRoutes = require('./cocinaRoutes');
+const pagoRoutes = require('./pagoRoutes');
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -32,6 +33,9 @@ router.use('/pedidos', pedidoRoutes);
 
 // Rutas de cocina
 router.use('/cocina', cocinaRoutes);
+
+// Rutas de pagos
+router.use('/pagos', pagoRoutes);
 
 // Ruta de bienvenida
 router.get('/', (req, res) => {
@@ -98,6 +102,13 @@ router.get('/', (req, res) => {
         marcarListo: 'PATCH /api/cocina/pedidos/:id/listo (requiere token)',
         cambiarEstado: 'PATCH /api/cocina/pedidos/:id/estado (requiere token)',
         estadisticas: 'GET /api/cocina/estadisticas (requiere token)',
+      },
+      pagos: {
+        obtenerCuenta: 'GET /api/pagos/mesas/:mesaId/cuenta (requiere token)',
+        dividirCuenta: 'POST /api/pagos/dividir-cuenta (requiere token)',
+        procesarPago: 'POST /api/pagos/procesar (requiere token)',
+        listarPagos: 'GET /api/pagos (requiere token)',
+        obtenerPago: 'GET /api/pagos/:id (requiere token)',
       },
     },
   });

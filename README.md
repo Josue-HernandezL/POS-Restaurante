@@ -3056,6 +3056,652 @@ pendiente → en_preparacion → listo → (mesero entrega) → entregado
 
 ---
 
+## 💳 Módulo de Pagos
+
+El módulo de pagos permite procesar el cobro de las cuentas, con soporte para múltiples métodos de pago, propinas configurables y división de cuentas entre varias personas.
+
+### 💰 Obtener Cuenta de Mesa
+
+**Endpoint:** `GET /api/pagos/mesas/:mesaId/cuenta`
+
+**Descripción:** Obtiene la cuenta completa de una mesa con todos sus pedidos activos, resumen de totales y opciones de propina sugeridas basadas en la configuración del restaurante.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `mesaId`: ID de la mesa
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "pedidos": [
+      {
+        "id": "pedido123abc",
+        "mesaId": "9clzrKWz1eKReUqHL4XP",
+        "numeroMesa": "Mesa 11",
+        "items": [
+          {
+            "itemId": "8nKgku3ZZb0LAy4rjGpV",
+            "nombre": "Café Americano",
+            "precioUnitario": 35,
+            "cantidad": 2,
+            "observaciones": "Sin azúcar",
+            "subtotal": 70
+          }
+        ],
+        "observaciones": "Cliente prefiere servicio rápido",
+        "subtotal": 70,
+        "impuestos": 11.2,
+        "total": 81.2,
+        "estado": "listo"
+      }
+    ],
+    "resumen": {
+      "subtotal": 175,
+      "impuestos": 28,
+      "totalSinPropina": 203
+    },
+    "propinas": {
+      "opcion1": {
+        "porcentaje": 10,
+        "monto": 17.5,
+        "totalConPropina": 220.5
+      },
+      "opcion2": {
+        "porcentaje": 15,
+        "monto": 26.25,
+        "totalConPropina": 229.25
+      },
+      "opcion3": {
+        "porcentaje": 20,
+        "monto": 35,
+        "totalConPropina": 238
+      },
+      "permitirPersonalizada": true
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Mesa no encontrada o sin pedidos activos
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/pagos/mesas/9clzrKWz1eKReUqHL4XP/cuenta \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### ✂️ Dividir Cuenta
+
+**Endpoint:** `POST /api/pagos/dividir-cuenta`
+
+**Descripción:** Divide la cuenta de una mesa entre varias personas, asignando items específicos a cada división. Calcula automáticamente subtotal, impuestos y total para cada persona.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "mesaId": "9clzrKWz1eKReUqHL4XP",
+  "numeroDivisiones": 2,
+  "divisiones": [
+    {
+      "items": [
+        {
+          "itemId": "8nKgku3ZZb0LAy4rjGpV",
+          "pedidoId": "pedido123abc",
+          "subtotal": 105
+        }
+      ]
+    },
+    {
+      "items": [
+        {
+          "itemId": "item456def",
+          "pedidoId": "pedido789xyz",
+          "subtotal": 70
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Campos:**
+- `mesaId` (string, requerido): ID de la mesa
+- `numeroDivisiones` (number, requerido): Número de personas (2-20)
+- `divisiones` (array, requerido): Array con las divisiones
+  - `items` (array, requerido): Items asignados a esta persona
+    - `itemId` (string): ID del item
+    - `pedidoId` (string): ID del pedido al que pertenece
+    - `subtotal` (number): Subtotal del item
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "mensaje": "Cuenta dividida exitosamente",
+  "datos": {
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "pedidoIds": ["pedido123abc", "pedido789xyz"],
+    "cuentaDividida": true,
+    "numeroDivisiones": 2,
+    "divisiones": [
+      {
+        "numero": 1,
+        "items": [...],
+        "subtotal": 105,
+        "impuestos": 16.8,
+        "total": 121.8,
+        "propina": 0,
+        "totalConPropina": 121.8
+      },
+      {
+        "numero": 2,
+        "items": [...],
+        "subtotal": 70,
+        "impuestos": 11.2,
+        "total": 81.2,
+        "propina": 0,
+        "totalConPropina": 81.2
+      }
+    ],
+    "totales": {
+      "subtotal": 175,
+      "impuestos": 28,
+      "total": 203
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `400`: Datos inválidos, número de divisiones fuera de rango
+- `404`: Mesa no encontrada o sin pedidos
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X POST http://localhost:3000/api/pagos/dividir-cuenta \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroDivisiones": 2,
+    "divisiones": [
+      {
+        "items": [{"itemId": "8nKgku3ZZb0LAy4rjGpV", "pedidoId": "pedido123abc", "subtotal": 105}]
+      },
+      {
+        "items": [{"itemId": "item456def", "pedidoId": "pedido789xyz", "subtotal": 70}]
+      }
+    ]
+  }'
+```
+
+---
+
+### 💵 Procesar Pago
+
+**Endpoint:** `POST /api/pagos/procesar`
+
+**Descripción:** Procesa el pago de una mesa. Actualiza automáticamente los pedidos a "entregado", cambia la mesa a "en_limpieza" y registra el pago en el historial.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer {token}
+```
+
+**Body:**
+```json
+{
+  "mesaId": "9clzrKWz1eKReUqHL4XP",
+  "metodoPago": "tarjeta",
+  "porcentajePropina": 15,
+  "cuentaDividida": false
+}
+```
+
+**Campos:**
+- `mesaId` (string, requerido): ID de la mesa
+- `metodoPago` (string, requerido): Método de pago
+  - Valores: `efectivo`, `transferencia`, `tarjeta`
+- `propina` (number, opcional): Monto de propina personalizada
+- `propinaPersonalizada` (boolean, opcional): Si la propina es personalizada
+- `porcentajePropina` (number, opcional): Porcentaje de propina (10, 15, 20, etc.)
+- `cuentaDividida` (boolean, opcional): Si la cuenta está dividida
+- `numeroDivisiones` (number, opcional): Número de divisiones si aplica
+- `divisiones` (array, opcional): Detalles de las divisiones
+
+**Nota sobre propinas:**
+- Puede enviar `propina` (monto) o `porcentajePropina` (porcentaje)
+- Si envía monto, se calcula el porcentaje automáticamente
+- Si envía porcentaje, se calcula el monto automáticamente
+- Si no envía ninguno, la propina será 0
+
+**Respuesta exitosa (201):**
+```json
+{
+  "exito": true,
+  "mensaje": "Pago procesado exitosamente",
+  "datos": {
+    "id": "pago123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "pedidoIds": ["pedido123abc", "pedido789xyz"],
+    "metodoPago": "tarjeta",
+    "subtotal": 175,
+    "impuestos": 28,
+    "propina": 26.25,
+    "propinaPersonalizada": false,
+    "porcentajePropina": 15,
+    "total": 229.25,
+    "cuentaDividida": false,
+    "numeroDivisiones": 1,
+    "divisiones": [],
+    "estado": "pagado",
+    "pagoCompletado": true,
+    "cajeroId": "cajero123",
+    "cajeroNombre": "cajero@restaurante.com",
+    "creadoEn": "2025-11-21T08:00:00.000Z",
+    "actualizadoEn": "2025-11-21T08:00:00.000Z"
+  }
+}
+```
+
+**Cambios automáticos al procesar pago:**
+1. ✅ Todos los pedidos de la mesa cambian a estado `entregado`
+2. ✅ La mesa cambia a estado `en_limpieza`
+3. ✅ Se registra el pago en el historial
+4. ✅ Se guarda quién procesó el pago (cajeroId, cajeroNombre)
+
+**Errores posibles:**
+- `400`: Método de pago inválido
+- `404`: Mesa no encontrada o sin pedidos
+- `401`: No autenticado
+
+**Ejemplos con cURL:**
+
+**Pago con tarjeta y 15% de propina:**
+```bash
+curl -X POST http://localhost:3000/api/pagos/procesar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "metodoPago": "tarjeta",
+    "porcentajePropina": 15
+  }'
+```
+
+**Pago en efectivo con propina personalizada:**
+```bash
+curl -X POST http://localhost:3000/api/pagos/procesar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "metodoPago": "efectivo",
+    "propina": 50,
+    "propinaPersonalizada": true
+  }'
+```
+
+**Pago con cuenta dividida:**
+```bash
+curl -X POST http://localhost:3000/api/pagos/procesar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "metodoPago": "tarjeta",
+    "porcentajePropina": 15,
+    "cuentaDividida": true,
+    "numeroDivisiones": 2,
+    "divisiones": [
+      {
+        "numero": 1,
+        "items": [...],
+        "subtotal": 105,
+        "impuestos": 16.8,
+        "total": 121.8
+      },
+      {
+        "numero": 2,
+        "items": [...],
+        "subtotal": 70,
+        "impuestos": 11.2,
+        "total": 81.2
+      }
+    ]
+  }'
+```
+
+---
+
+### 📋 Listar Pagos
+
+**Endpoint:** `GET /api/pagos`
+
+**Descripción:** Obtiene el historial de pagos con filtros opcionales. Incluye totales de ventas y propinas.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters (opcionales):**
+- `fecha`: Filtrar por fecha específica (formato: YYYY-MM-DD)
+- `metodoPago`: Filtrar por método de pago (`efectivo`, `transferencia`, `tarjeta`)
+- `mesaId`: Filtrar por mesa específica
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "pagos": [
+      {
+        "id": "pago123abc",
+        "mesaId": "9clzrKWz1eKReUqHL4XP",
+        "numeroMesa": "Mesa 11",
+        "pedidoIds": ["pedido123abc"],
+        "metodoPago": "tarjeta",
+        "subtotal": 175,
+        "impuestos": 28,
+        "propina": 26.25,
+        "total": 229.25,
+        "cuentaDividida": false,
+        "estado": "pagado",
+        "cajeroNombre": "cajero@restaurante.com",
+        "creadoEn": "2025-11-21T08:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "totales": {
+      "totalVentas": 229.25,
+      "totalPropinas": 26.25
+    }
+  }
+}
+```
+
+**Ejemplos de filtrado:**
+
+**Todos los pagos:**
+```bash
+curl -X GET http://localhost:3000/api/pagos \
+  -H "Authorization: Bearer {token}"
+```
+
+**Pagos de una fecha específica:**
+```bash
+curl -X GET "http://localhost:3000/api/pagos?fecha=2025-11-21" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Pagos con tarjeta:**
+```bash
+curl -X GET "http://localhost:3000/api/pagos?metodoPago=tarjeta" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Pagos de una mesa:**
+```bash
+curl -X GET "http://localhost:3000/api/pagos?mesaId=9clzrKWz1eKReUqHL4XP" \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 🔍 Obtener Detalle de Pago
+
+**Endpoint:** `GET /api/pagos/:id`
+
+**Descripción:** Obtiene los detalles completos de un pago específico.
+
+**Autenticación:** Requerida (cualquier rol autenticado)
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Parámetros de ruta:**
+- `id`: ID del pago
+
+**Respuesta exitosa (200):**
+```json
+{
+  "exito": true,
+  "datos": {
+    "id": "pago123abc",
+    "mesaId": "9clzrKWz1eKReUqHL4XP",
+    "numeroMesa": "Mesa 11",
+    "pedidoIds": ["pedido123abc", "pedido789xyz"],
+    "metodoPago": "tarjeta",
+    "subtotal": 175,
+    "impuestos": 28,
+    "propina": 26.25,
+    "propinaPersonalizada": false,
+    "porcentajePropina": 15,
+    "total": 229.25,
+    "cuentaDividida": true,
+    "numeroDivisiones": 2,
+    "divisiones": [...],
+    "estado": "pagado",
+    "pagoCompletado": true,
+    "cajeroId": "cajero123",
+    "cajeroNombre": "cajero@restaurante.com",
+    "creadoEn": "2025-11-21T08:00:00.000Z",
+    "actualizadoEn": "2025-11-21T08:00:00.000Z"
+  }
+}
+```
+
+**Errores posibles:**
+- `404`: Pago no encontrado
+- `401`: No autenticado
+
+**Ejemplo con cURL:**
+```bash
+curl -X GET http://localhost:3000/api/pagos/pago123abc \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+### 💡 Flujo de Trabajo de Pagos
+
+El módulo de pagos sigue este flujo completo:
+
+```
+SELECCIONAR MESA → VER CUENTA → (OPCIONAL) DIVIDIR CUENTA → PROCESAR PAGO
+       ↓               ↓                    ↓                      ↓
+  Mesa con      Ver pedidos +      Asignar items        Elegir método +
+   pedidos       propinas           a cada persona          propina
+   activos      sugeridas                                      ↓
+                                                         Mesa a limpieza
+                                                         Pedidos entregados
+```
+
+**1. Obtener cuenta de la mesa:**
+- Endpoint: `GET /api/pagos/mesas/:mesaId/cuenta`
+- Muestra todos los pedidos activos
+- Calcula totales (subtotal, impuestos)
+- Sugiere 3 opciones de propina basadas en configuración
+- Permite propina personalizada si está habilitada
+
+**2. (Opcional) Dividir cuenta:**
+- Endpoint: `POST /api/pagos/dividir-cuenta`
+- Especifica cuántas personas (2-20)
+- Asigna items específicos a cada persona
+- Calcula automáticamente:
+  - Subtotal por persona
+  - Impuestos proporcionales
+  - Total individual
+- Se puede cobrar por separado pero se registra como un solo pago
+
+**3. Procesar pago:**
+- Endpoint: `POST /api/pagos/procesar`
+- Selecciona método de pago (efectivo, transferencia, tarjeta)
+- Elige o ingresa propina:
+  - Por porcentaje (10%, 15%, 20%)
+  - Monto personalizado
+  - Sin propina
+- Si la cuenta está dividida, envía los detalles de división
+- **Acciones automáticas al pagar:**
+  - ✅ Cambia todos los pedidos a "entregado"
+  - ✅ Cambia la mesa a "en_limpieza"
+  - ✅ Registra el pago en historial
+  - ✅ Guarda quién procesó el pago
+
+**4. Historial y reportes:**
+- Endpoint: `GET /api/pagos`
+- Consulta pagos por fecha, método, mesa
+- Ve totales de ventas y propinas
+- Detalle completo de cada transacción
+
+### 📊 Métodos de Pago Disponibles
+
+| Método | Descripción | Uso |
+|--------|-------------|-----|
+| `efectivo` | Pago en efectivo | Cliente paga con billetes/monedas |
+| `transferencia` | Transferencia bancaria | Cliente transfiere desde su banco |
+| `tarjeta` | Tarjeta de crédito/débito | Terminal punto de venta |
+
+### 💵 Gestión de Propinas
+
+El sistema soporta tres formas de manejar propinas:
+
+**1. Propinas sugeridas (por porcentaje):**
+- Configurables en `/api/configuracion/propinas`
+- Opciones por defecto: 10%, 15%, 20%
+- Se calculan sobre el subtotal antes de impuestos
+- Ejemplo: Subtotal $175 × 15% = $26.25
+
+**2. Propina personalizada (por monto):**
+- Cliente ingresa monto específico
+- Se calcula el porcentaje automáticamente
+- Debe estar habilitado en configuración
+- Ejemplo: Cliente da $50 de propina
+
+**3. Sin propina:**
+- Simplemente no enviar campos de propina
+- `propina: 0` y `porcentajePropina: 0`
+
+### ✂️ División de Cuentas
+
+**Características:**
+- ✅ División entre 2 a 20 personas
+- ✅ Asignación exacta de items a cada persona
+- ✅ Cálculo automático de impuestos proporcionales
+- ✅ Total individual por persona
+- ✅ Suma total al final para verificación
+- ✅ Se registra como un solo pago unificado
+
+**Ejemplo de uso:**
+Mesa con 2 pedidos, 2 personas:
+- **Persona 1:** Café $105 → Total: $121.80 (con impuestos)
+- **Persona 2:** Café $70 → Total: $81.20 (con impuestos)
+- **Gran Total:** $203.00
+
+Cada persona puede pagar su parte, pero el sistema registra un solo pago total de $203.00 más propina.
+
+### 🎯 Casos de Uso Comunes
+
+**Caso 1: Pago simple sin propina**
+```json
+{
+  "mesaId": "mesa123",
+  "metodoPago": "efectivo"
+}
+```
+
+**Caso 2: Pago con propina del 15%**
+```json
+{
+  "mesaId": "mesa123",
+  "metodoPago": "tarjeta",
+  "porcentajePropina": 15
+}
+```
+
+**Caso 3: Pago con propina personalizada**
+```json
+{
+  "mesaId": "mesa123",
+  "metodoPago": "efectivo",
+  "propina": 50,
+  "propinaPersonalizada": true
+}
+```
+
+**Caso 4: Cuenta dividida en 2 personas**
+```json
+{
+  "mesaId": "mesa123",
+  "metodoPago": "tarjeta",
+  "porcentajePropina": 15,
+  "cuentaDividida": true,
+  "numeroDivisiones": 2,
+  "divisiones": [
+    {
+      "numero": 1,
+      "items": [...],
+      "subtotal": 105,
+      "impuestos": 16.8,
+      "total": 121.8
+    },
+    {
+      "numero": 2,
+      "items": [...],
+      "subtotal": 70,
+      "impuestos": 11.2,
+      "total": 81.2
+    }
+  ]
+}
+```
+
+### 💡 Notas Importantes sobre Pagos
+
+- Los totales incluyen automáticamente impuestos configurados en el sistema (default: 16%)
+- Las propinas se calculan sobre el **subtotal** (antes de impuestos)
+- Al procesar un pago, **todos** los pedidos activos de la mesa se marcan como entregados
+- La mesa cambia automáticamente a "en_limpieza" después del pago
+- Se registra quién procesó el pago (usuario autenticado)
+- Las cuentas divididas se registran como un solo pago con detalles de división
+- Los porcentajes de propina configurables se obtienen de `/api/configuracion`
+- El historial de pagos se puede filtrar por fecha, método o mesa para reportes
+
+---
+
 ## Roles Disponibles
 
 | Rol | Descripción |
