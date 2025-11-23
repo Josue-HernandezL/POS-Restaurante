@@ -68,6 +68,7 @@ const registrar = async (req, res) => {
       correoElectronico: correoElectronico.toLowerCase(),
       rol,
       contrasenaHash,
+      pinSeguridad: null
     });
 
     // Guardar en Firestore

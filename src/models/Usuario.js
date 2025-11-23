@@ -4,10 +4,13 @@ const bcrypt = require('bcryptjs');
 class Usuario {
   constructor(data) {
     this.id = data.id || null;
-    this.nombre = data.nombre || data.nombreCompleto;
-    this.correo = data.correo || data.correoElectronico;
+    this.nombreCompleto = data.nombreCompleto || data.nombre;
+    this.nombre = this.nombreCompleto; // Alias para compatibilidad
+    this.correoElectronico = data.correoElectronico || data.correo;
+    this.correo = this.correoElectronico; // Alias para compatibilidad
     this.rol = data.rol; // 'dueno', 'gerente', 'cajero', 'mesero', 'cocinero'
-    this.pinSeguridad = data.pinSeguridad || data.contrasenaHash; // PIN de 4-6 dígitos (hasheado)
+    this.contrasenaHash = data.contrasenaHash;
+    this.pinSeguridad = data.pinSeguridad;
     this.activo = data.activo !== undefined ? data.activo : true;
     this.creadoEn = data.creadoEn || new Date().toISOString();
     this.actualizadoEn = data.actualizadoEn || new Date().toISOString();
@@ -73,7 +76,7 @@ class Usuario {
    */
   validarCorreo() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(this.correo);
+    return emailRegex.test(this.correoElectronico || this.correo);
   }
 
   /**
@@ -83,11 +86,11 @@ class Usuario {
   validar() {
     const errores = [];
 
-    if (!this.nombre || this.nombre.trim().length === 0) {
+    if (!this.nombreCompleto || this.nombreCompleto.trim().length === 0) {
       errores.push('El nombre es requerido');
     }
 
-    if (!this.correo || !this.validarCorreo()) {
+    if (!this.correoElectronico || !this.validarCorreo()) {
       errores.push('El correo es inválido');
     }
 
@@ -140,8 +143,8 @@ class Usuario {
   toJSON() {
     return {
       id: this.id,
-      nombre: this.nombre,
-      correo: this.correo,
+      nombreCompleto: this.nombreCompleto,
+      correoElectronico: this.correoElectronico,
       rol: this.rol,
       nombreRol: this.obtenerNombreRol(),
       activo: this.activo,
@@ -159,6 +162,7 @@ class Usuario {
     delete data.id; // Firestore maneja el ID por separado
     return {
       ...data,
+      contrasenaHash: this.contrasenaHash,
       pinSeguridad: this.pinSeguridad
     };
   }

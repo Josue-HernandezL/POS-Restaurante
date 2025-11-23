@@ -29,7 +29,7 @@ router.post(
       .trim()
       .notEmpty()
       .withMessage('El rol es requerido')
-      .isIn(['admin', 'gerente', 'cajero', 'mesero', 'cocinero'])
+      .isIn(['dueno', 'gerente', 'cajero', 'mesero', 'cocinero'])
       .withMessage('Rol inválido'),
     body('contrasena')
       .trim()
