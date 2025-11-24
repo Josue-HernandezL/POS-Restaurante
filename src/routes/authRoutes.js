@@ -3,6 +3,7 @@ const router = express.Router();
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
 const { verificarToken } = require('../middleware/auth');
+const validarCampos = require('../middleware/validarCampos');
 
 /**
  * @route   POST /api/auth/register
@@ -38,6 +39,7 @@ router.post(
       .isLength({ min: 6 })
       .withMessage('La contraseña debe tener al menos 6 caracteres'),
   ],
+  validarCampos,
   authController.registrar
 );
 
@@ -61,6 +63,7 @@ router.post(
       .notEmpty()
       .withMessage('La contraseña es requerida'),
   ],
+  validarCampos,
   authController.iniciarSesion
 );
 

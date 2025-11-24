@@ -8,6 +8,7 @@ const {
   actualizarPropinas
 } = require('../controllers/configuracionController');
 const { verificarToken } = require('../middleware/auth');
+const validarCampos = require('../middleware/validarCampos');
 
 const router = express.Router();
 
@@ -47,6 +48,7 @@ router.put(
       .isInt({ min: 0, max: 500 })
       .withMessage('El número de mesas debe estar entre 0 y 500')
   ],
+  validarCampos,
   actualizarRestaurante
 );
 
@@ -68,6 +70,7 @@ router.put(
       .isBoolean()
       .withMessage('nuevasReservaciones debe ser un valor booleano')
   ],
+  validarCampos,
   actualizarNotificaciones
 );
 
@@ -89,6 +92,7 @@ router.put(
       .isBoolean()
       .withMessage('aplicarATodos debe ser un valor booleano')
   ],
+  validarCampos,
   actualizarImpuestos
 );
 
@@ -118,6 +122,7 @@ router.put(
       .isBoolean()
       .withMessage('permitirPersonalizada debe ser un valor booleano')
   ],
+  validarCampos,
   actualizarPropinas
 );
 
