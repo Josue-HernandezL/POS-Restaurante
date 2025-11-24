@@ -511,7 +511,7 @@ const cancelarPedido = async (req, res) => {
 const eliminarPedido = async (req, res) => {
   try {
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para eliminar pedidos'

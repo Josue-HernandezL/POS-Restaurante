@@ -64,7 +64,7 @@ const crearUsuario = async (req, res) => {
       modulo: Autorizacion.MODULOS.USUARIOS,
       usuarioId: req.usuario.uid,
       usuarioNombre: req.usuario.correoElectronico || req.usuario.email,
-      usuarioRol: req.usuario.rol || 'admin',
+      usuarioRol: req.usuario.rol || 'dueno',
       detalles: {
         usuarioCreado: {
           id: docRef.id,
@@ -260,7 +260,7 @@ const actualizarUsuario = async (req, res) => {
       modulo: Autorizacion.MODULOS.USUARIOS,
         usuarioId: req.usuario.uid,
         usuarioNombre: req.usuario.correoElectronico || req.usuario.email,
-        usuarioRol: req.usuario.rol || 'admin',
+        usuarioRol: req.usuario.rol || 'dueno',
       detalles: {
         usuarioActualizado: {
           id,
@@ -337,7 +337,7 @@ const eliminarUsuario = async (req, res) => {
       modulo: Autorizacion.MODULOS.USUARIOS,
       usuarioId: req.usuario.uid,
       usuarioNombre: req.usuario.correoElectronico || req.usuario.email,
-      usuarioRol: req.usuario.rol || 'admin',
+      usuarioRol: req.usuario.rol || 'dueno',
       detalles: {
         usuarioEliminado: {
           id,

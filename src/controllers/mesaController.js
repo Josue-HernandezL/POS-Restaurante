@@ -17,7 +17,7 @@ const crearMesa = async (req, res) => {
     }
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para crear mesas'
@@ -181,7 +181,7 @@ const actualizarMesa = async (req, res) => {
     }
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para actualizar mesas'
@@ -329,7 +329,7 @@ const cambiarEstadoMesa = async (req, res) => {
 const inicializarMesas = async (req, res) => {
   try {
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para inicializar mesas'
@@ -416,7 +416,7 @@ const inicializarMesas = async (req, res) => {
 const eliminarMesa = async (req, res) => {
   try {
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para eliminar mesas'
