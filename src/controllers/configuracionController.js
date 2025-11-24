@@ -61,7 +61,7 @@ const actualizarRestaurante = async (req, res) => {
     const { nombre, direccion, telefono, numeroMesas } = req.body;
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para modificar la configuración del restaurante'
@@ -129,7 +129,7 @@ const actualizarNotificaciones = async (req, res) => {
     const { nuevasOrdenes, nuevasReservaciones } = req.body;
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para modificar las notificaciones'
@@ -195,7 +195,7 @@ const actualizarImpuestos = async (req, res) => {
     const { porcentajeIVA, aplicarATodos } = req.body;
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para modificar la configuración de impuestos'
@@ -261,7 +261,7 @@ const actualizarPropinas = async (req, res) => {
     const { opcion1, opcion2, opcion3, permitirPersonalizada } = req.body;
 
     // Verificar que el usuario sea admin o gerente
-    if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'gerente') {
+    if (req.usuario.rol !== 'dueno' && req.usuario.rol !== 'gerente') {
       return res.status(403).json({
         exito: false,
         mensaje: 'No tienes permisos para modificar las opciones de propina'
