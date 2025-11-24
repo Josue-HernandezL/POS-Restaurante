@@ -12,7 +12,7 @@ const { verificarToken, verificarRol } = require('../middleware/auth');
 router.post(
   '/',
   verificarToken,
-  verificarRol('admin', 'gerente'),
+  verificarRol('dueno', 'gerente'),
   [
     body('nombre')
       .trim()
@@ -60,7 +60,7 @@ router.get(
 router.put(
   '/:id',
   verificarToken,
-  verificarRol('admin', 'gerente'),
+  verificarRol('dueno', 'gerente'),
   [
     body('nombre')
       .optional()
@@ -88,7 +88,7 @@ router.put(
 router.delete(
   '/:id',
   verificarToken,
-  verificarRol('admin', 'gerente'),
+  verificarRol('dueno', 'gerente'),
   categoriaController.eliminarCategoria
 );
 
