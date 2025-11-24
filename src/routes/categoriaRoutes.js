@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, query } = require('express-validator');
 const categoriaController = require('../controllers/categoriaController');
 const { verificarToken, verificarRol } = require('../middleware/auth');
+const validarCampos = require('../middleware/validarCampos');
 
 /**
  * @route   POST /api/categorias
@@ -27,6 +28,7 @@ router.post(
       .isLength({ max: 200 })
       .withMessage('La descripción no puede exceder 200 caracteres'),
   ],
+  validarCampos,
   categoriaController.crearCategoria
 );
 
@@ -77,6 +79,7 @@ router.put(
       .isBoolean()
       .withMessage('El campo activo debe ser un booleano'),
   ],
+  validarCampos,
   categoriaController.actualizarCategoria
 );
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const { body } = require('express-validator');
 const itemMenuController = require('../controllers/itemMenuController');
 const { verificarToken, verificarRol } = require('../middleware/auth');
+const validarCampos = require('../middleware/validarCampos');
 
 /**
  * @route   POST /api/items
@@ -40,7 +41,8 @@ router.post(
       .isLength({ max: 300 })
       .withMessage('La descripción no puede exceder 300 caracteres'),
   ],
-  itemMenuController.crearItem
+  validarCampos,
+  itemMenuController.crearItem,
 );
 
 /**
@@ -51,7 +53,7 @@ router.post(
 router.get(
   '/',
   verificarToken,
-  itemMenuController.obtenerItems
+  itemMenuController.obtenerItems,
 );
 
 /**
@@ -62,7 +64,7 @@ router.get(
 router.get(
   '/:id',
   verificarToken,
-  itemMenuController.obtenerItemPorId
+  itemMenuController.obtenerItemPorId,
 );
 
 /**
@@ -103,7 +105,8 @@ router.put(
       .isBoolean()
       .withMessage('El campo activo debe ser un booleano'),
   ],
-  itemMenuController.actualizarItem
+  validarCampos,
+  itemMenuController.actualizarItem,
 );
 
 /**
@@ -115,7 +118,7 @@ router.delete(
   '/:id',
   verificarToken,
   verificarRol('dueno', 'gerente'),
-  itemMenuController.eliminarItem
+  itemMenuController.eliminarItem,
 );
 
 module.exports = router;
