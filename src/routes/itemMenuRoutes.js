@@ -108,8 +108,8 @@ router.put(
 
 /**
  * @route   DELETE /api/items/:id
- * @desc    Eliminar un ítem (soft delete)
- * @access  Privado (admin, gerente)
+ * @desc    Eliminar un ítem (eliminación física)
+ * @access  Privado (dueno, gerente)
  */
 router.delete(
   '/:id',

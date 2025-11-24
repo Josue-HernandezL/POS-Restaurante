@@ -219,7 +219,7 @@ const actualizarCategoria = async (req, res) => {
 };
 
 /**
- * Eliminar una categoría (soft delete)
+ * Eliminar una categoría (eliminación física)
  */
 const eliminarCategoria = async (req, res) => {
   try {
@@ -239,7 +239,6 @@ const eliminarCategoria = async (req, res) => {
     const itemsCollection = db.collection('items');
     const itemsAsociados = await itemsCollection
       .where('categoriaId', '==', id)
-      .where('activo', '==', true)
       .get();
 
     if (!itemsAsociados.empty) {
@@ -250,11 +249,8 @@ const eliminarCategoria = async (req, res) => {
       });
     }
 
-    // Soft delete: marcar como inactivo
-    await categoriasCollection.doc(id).update({
-      activo: false,
-      actualizadoEn: new Date(),
-    });
+    // Eliminación física: eliminar el documento de la base de datos
+    await categoriasCollection.doc(id).delete();
 
     return res.status(200).json({
       exito: true,

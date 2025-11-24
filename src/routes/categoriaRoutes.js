@@ -82,7 +82,7 @@ router.put(
 
 /**
  * @route   DELETE /api/categorias/:id
- * @desc    Eliminar una categoría (soft delete)
+ * @desc    Eliminar una categoría (eliminación física)
  * @access  Privado (admin, gerente)
  */
 router.delete(

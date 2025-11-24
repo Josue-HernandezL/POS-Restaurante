@@ -307,7 +307,7 @@ const actualizarItem = async (req, res) => {
 };
 
 /**
- * Eliminar un ítem (soft delete)
+ * Eliminar un ítem (eliminación física)
  */
 const eliminarItem = async (req, res) => {
   try {
@@ -323,11 +323,8 @@ const eliminarItem = async (req, res) => {
       });
     }
 
-    // Soft delete: marcar como inactivo
-    await itemsCollection.doc(id).update({
-      activo: false,
-      actualizadoEn: new Date(),
-    });
+    // Eliminación física: eliminar el documento de la base de datos
+    await itemsCollection.doc(id).delete();
 
     return res.status(200).json({
       exito: true,
